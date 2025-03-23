@@ -36,6 +36,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   lucide_icons_flutter: ^2.0.1
   shadcn_flutter: ^0.0.30
+  mobkit_dashed_border: ^0.0.7
 
 dev_dependencies:
   flutter_test:
