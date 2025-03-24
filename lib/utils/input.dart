@@ -1,0 +1,80 @@
+import 'package:flutter/material.dart';
+import 'package:tiffinwala/constants/colors/colors.dart';
+
+class Input extends StatelessWidget {
+  const Input({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 5,
+      children: [
+        Text(
+          'Phone Number',
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: Color(0XFFC9C9C9),
+          ),
+        ),
+        SizedBox(
+          height: 36,
+          child: TextField(
+            style: TextStyle(
+              fontSize: 13.5,
+              fontWeight: FontWeight.w500,
+              color: AppColors.secondary,
+            ),
+            textAlignVertical: TextAlignVertical.center,
+            cursorOpacityAnimates: true,
+            enableIMEPersonalizedLearning: true,
+            enableInteractiveSelection: true,
+            keyboardType: TextInputType.phone,
+            stylusHandwritingEnabled: true,
+            decoration: InputDecoration(
+              enabledBorder: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: const Color.fromARGB(255, 94, 94, 94),
+                  width: 1.5,
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderSide: BorderSide(
+                  color: const Color.fromARGB(255, 94, 94, 94),
+                  width: 2,
+                ),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              hintText: 'Phone Number',
+              hintStyle: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w500,
+                color: Color(0XFF505050),
+              ),
+              border: InputBorder.none,
+              prefixStyle: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
+                color: AppColors.secondary,
+              ),
+              hintFadeDuration: const Duration(milliseconds: 150),
+              prefixIcon: Padding(
+                padding: const EdgeInsets.only(top: 8, left: 8),
+                child: Text(
+                  '+91',
+                  style: TextStyle(
+                    fontSize: 13.5,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0XFFD0D0D0),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}

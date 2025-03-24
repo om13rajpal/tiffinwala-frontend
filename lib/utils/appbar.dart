@@ -10,6 +10,8 @@ class TiffinAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SliverAppBar(
+      automaticallyImplyLeading: false,
+      elevation: 0,
       actionsPadding: EdgeInsets.symmetric(horizontal: 10),
       titleSpacing: 20,
       title: Text(

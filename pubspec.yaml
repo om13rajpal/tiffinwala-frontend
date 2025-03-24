@@ -37,6 +37,7 @@ dependencies:
   lucide_icons_flutter: ^2.0.1
   shadcn_flutter: ^0.0.30
   mobkit_dashed_border: ^0.0.7
+  wolt_modal_sheet: ^0.11.0
 
 dev_dependencies:
   flutter_test:

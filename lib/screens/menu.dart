@@ -15,8 +15,6 @@ class Menu extends StatefulWidget {
   State<Menu> createState() => _MenuState();
 }
 
-bool value = false;
-
 class _MenuState extends State<Menu> {
   @override
   Widget build(BuildContext context) {
