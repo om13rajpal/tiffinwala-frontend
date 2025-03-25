@@ -5,11 +5,12 @@ class Input extends StatelessWidget {
   final bool prefix;
   final String label;
   final String hint;
+  final TextEditingController controller;
   const Input({
     super.key,
     required this.prefix,
     required this.label,
-    required this.hint,
+    required this.hint, required this.controller,
   });
 
   @override
@@ -29,6 +30,7 @@ class Input extends StatelessWidget {
         SizedBox(
           height: 36,
           child: TextField(
+            controller: controller,
             style: TextStyle(
               fontSize: 13.5,
               fontWeight: FontWeight.w500,

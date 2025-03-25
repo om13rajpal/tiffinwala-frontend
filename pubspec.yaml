@@ -38,6 +38,8 @@ dependencies:
   shadcn_flutter: ^0.0.30
   mobkit_dashed_border: ^0.0.7
   wolt_modal_sheet: ^0.11.0
+  http: ^1.3.0
+  shared_preferences: ^2.5.2
 
 dev_dependencies:
   flutter_test:
