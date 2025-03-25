@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:mobkit_dashed_border/mobkit_dashed_border.dart';
 import 'package:tiffinwala/constants/colors/colors.dart';
-import 'package:tiffinwala/utils/address.dart';
+import 'package:tiffinwala/utils/text%20and%20inputs/address.dart';
 import 'package:tiffinwala/utils/appbar.dart';
 import 'package:tiffinwala/utils/carousel.dart';
 import 'package:tiffinwala/utils/coupen.dart';
-import 'package:tiffinwala/utils/itemdetails.dart';
+import 'package:tiffinwala/utils/text%20and%20inputs/itemdetails.dart';
 import 'package:tiffinwala/utils/menucontrols.dart';
 
 class Menu extends StatefulWidget {

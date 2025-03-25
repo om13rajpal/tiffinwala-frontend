@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:tiffinwala/utils/button.dart';
-import 'package:tiffinwala/utils/gradientext.dart';
-import 'package:tiffinwala/utils/input.dart';
+import 'package:tiffinwala/utils/buttons/button.dart';
+import 'package:tiffinwala/utils/text%20and%20inputs/gradientext.dart';
+import 'package:tiffinwala/utils/text%20and%20inputs/input.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
 SliverWoltModalSheetPage phone(BuildContext context, TextTheme textTheme) {
@@ -14,7 +14,7 @@ SliverWoltModalSheetPage phone(BuildContext context, TextTheme textTheme) {
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: 15,
         children: [
-          Row(
+          const Row(
             children: [
               Text(
                 'Hola amigo!',
@@ -24,8 +24,15 @@ SliverWoltModalSheetPage phone(BuildContext context, TextTheme textTheme) {
               GradientText(),
             ],
           ),
-          Input(),
-          TiffinButton(),
+          const Input(prefix: true, label: 'Phone Number', hint: 'Phone Number'),
+          TiffinButton(
+            label: 'GET IN',
+            width: 65,
+            height: 28,
+            onPressed: () {
+              WoltModalSheet.of(context).showNext();
+            },
+          ),
         ],
       ),
     ),

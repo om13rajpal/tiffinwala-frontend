@@ -2,7 +2,15 @@ import 'package:flutter/material.dart';
 import 'package:tiffinwala/constants/colors/colors.dart';
 
 class Input extends StatelessWidget {
-  const Input({super.key});
+  final bool prefix;
+  final String label;
+  final String hint;
+  const Input({
+    super.key,
+    required this.prefix,
+    required this.label,
+    required this.hint,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -11,7 +19,7 @@ class Input extends StatelessWidget {
       spacing: 5,
       children: [
         Text(
-          'Phone Number',
+          label,
           style: TextStyle(
             fontSize: 11,
             fontWeight: FontWeight.w600,
@@ -47,7 +55,7 @@ class Input extends StatelessWidget {
                 ),
                 borderRadius: BorderRadius.circular(10),
               ),
-              hintText: 'Phone Number',
+              hintText: hint,
               hintStyle: TextStyle(
                 fontSize: 13,
                 fontWeight: FontWeight.w500,
@@ -60,17 +68,20 @@ class Input extends StatelessWidget {
                 color: AppColors.secondary,
               ),
               hintFadeDuration: const Duration(milliseconds: 150),
-              prefixIcon: Padding(
-                padding: const EdgeInsets.only(top: 8, left: 8),
-                child: Text(
-                  '+91',
-                  style: TextStyle(
-                    fontSize: 13.5,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0XFFD0D0D0),
-                  ),
-                ),
-              ),
+              prefixIcon:
+                  (prefix)
+                      ? Padding(
+                        padding: const EdgeInsets.only(top: 8, left: 8),
+                        child: Text(
+                          '+91',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0XFFD0D0D0),
+                          ),
+                        ),
+                      )
+                      : null,
             ),
           ),
         ),

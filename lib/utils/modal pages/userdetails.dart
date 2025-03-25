@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:tiffinwala/utils/button.dart';
-import 'package:tiffinwala/utils/input.dart';
+import 'package:tiffinwala/screens/menu.dart';
+import 'package:tiffinwala/utils/buttons/button.dart';
+import 'package:tiffinwala/utils/text%20and%20inputs/input.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
 SliverWoltModalSheetPage userDetails(
@@ -37,7 +38,22 @@ SliverWoltModalSheetPage userDetails(
       child: Column(
         spacing: 15,
         crossAxisAlignment: CrossAxisAlignment.start,
-        children: [Input(), Input(), Input(), TiffinButton()],
+        children: [
+          const Input(prefix: false, label: 'First Name', hint: 'John'),
+          const Input(prefix: false, label: 'Last Name', hint: 'Doe'),
+          const Input(prefix: false, label: 'Address', hint: 'Street xyz, Patiala'),
+          TiffinButton(
+            label: 'SAVE',
+            width: 65,
+            height: 28,
+            onPressed: () {
+              Navigator.pushReplacement(
+                context,
+                MaterialPageRoute(builder: (context) => Menu()),
+              );
+            },
+          ),
+        ],
       ),
     ),
   );

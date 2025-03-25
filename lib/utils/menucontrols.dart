@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tiffinwala/constants/colors/colors.dart';
-import 'package:tiffinwala/utils/dropdown.dart';
-import 'package:tiffinwala/utils/switch.dart';
+import 'package:tiffinwala/utils/buttons/dropdown.dart';
+import 'package:tiffinwala/utils/buttons/switch.dart';
 
 class MenuControls extends StatelessWidget {
   const MenuControls({super.key});

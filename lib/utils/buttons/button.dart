@@ -1,15 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:tiffinwala/constants/colors/colors.dart';
-import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
 class TiffinButton extends StatelessWidget {
-  const TiffinButton({super.key});
+  final String label;
+  final double width;
+  final double height;
+  final VoidCallback onPressed;
+  const TiffinButton({
+    super.key,
+    required this.label,
+    required this.width,
+    required this.height, required this.onPressed,
+  });
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 65,
-      height: 28,
+      width: width,
+      height: height,
       child: ElevatedButton(
         style: ButtonStyle(
           backgroundColor: WidgetStatePropertyAll(Color(0xFF3E3E3E)),
@@ -18,11 +26,9 @@ class TiffinButton extends StatelessWidget {
             RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
           ),
         ),
-        onPressed: () {
-          WoltModalSheet.of(context).showNext();
-        },
+        onPressed: onPressed,
         child: Text(
-          'GET IN',
+          label,
           style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w600,
