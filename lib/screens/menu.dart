@@ -1,12 +1,17 @@
+import 'dart:convert';
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
 import 'package:mobkit_dashed_border/mobkit_dashed_border.dart';
 import 'package:tiffinwala/constants/colors/colors.dart';
+import 'package:tiffinwala/constants/colors/url.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/address.dart';
 import 'package:tiffinwala/utils/appbar.dart';
 import 'package:tiffinwala/utils/carousel.dart';
 import 'package:tiffinwala/utils/coupen.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/itemdetails.dart';
 import 'package:tiffinwala/utils/menucontrols.dart';
+import 'package:http/http.dart' as http;
 
 class Menu extends StatefulWidget {
   const Menu({super.key});
@@ -15,7 +20,45 @@ class Menu extends StatefulWidget {
   State<Menu> createState() => _MenuState();
 }
 
+List<dynamic> categories = [];
+List<dynamic> items = [];
+List<dynamic> optionSets = [];
+
+Future<void> getMenu() async {
+  var response = await http.get(
+    Uri.parse('${BaseUrl.url}/menu'),
+    headers: {'Content-Type': 'application/json'},
+  );
+
+  var jsonRes = await jsonDecode(response.body);
+
+  if (jsonRes['status']) {
+    categories = jsonRes['data']['categories'];
+    items = jsonRes['data']['items'];
+    optionSets = jsonRes['data']['optionSets'];
+
+    for (var category in categories) {
+      log(category['name']);
+      List categoryItems =
+          items
+              .where(
+                (element) => element['categoryId'] == category['categoryId'],
+              )
+              .toList();
+      log(categoryItems.toString());
+    }
+  } else {
+    log(jsonRes['message']);
+  }
+}
+
 class _MenuState extends State<Menu> {
+  @override
+  void initState() {
+    getMenu();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -88,7 +131,7 @@ class _MenuState extends State<Menu> {
                             spaceLength: 2.5,
                           ),
                         ),
-                        child: ItemDetails()
+                        child: ItemDetails(),
                       ),
                     ],
                   ),
