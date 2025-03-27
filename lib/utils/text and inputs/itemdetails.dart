@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:tiffinwala/constants/colors/colors.dart';
 
 class ItemDetails extends StatelessWidget {
-  const ItemDetails({super.key});
+  final int price;
+  final String title;
+  const ItemDetails({super.key, required this.price, required this.title});
 
   @override
   Widget build(BuildContext context) {
@@ -43,7 +45,7 @@ class ItemDetails extends StatelessWidget {
               SizedBox(
                 width: 150,
                 child: Text(
-                  'Veg Biryani with Raita & Salad',
+                  title,
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -80,7 +82,7 @@ class ItemDetails extends StatelessWidget {
             ],
           ),
           Text(
-            '₹ 79',
+            '₹ ${price.toString()}',
             style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w500,
