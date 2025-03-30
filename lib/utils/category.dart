@@ -44,8 +44,8 @@ class Category extends StatelessWidget {
         SizedBox(height: 10),
         Column(
           children: List.generate(items.length, (index) {
-            if (items[index]['price'] == null ||
-                items[index]['itemName'] == null) {
+            if (items[index]['item']['price'] == null ||
+                items[index]['item']['itemName'] == null) {
               return Container();
             }
 
@@ -60,14 +60,14 @@ class Category extends StatelessWidget {
                   ),
                 ),
                 child: ItemDetails(
-                  price: items[index]['price'],
-                  title: items[index]['itemName'],
+                  price: items[index]['item']['price'],
+                  title: items[index]['item']['itemName'], optionSet: items[index]['optionSet'],
                 ),
               );
             }
             return ItemDetails(
-              price: items[index]['price'],
-              title: items[index]['itemName'],
+              price: items[index]['item']['price'],
+              title: items[index]['item']['itemName'], optionSet: items[index]['optionSet'],
             );
           }),
         ),

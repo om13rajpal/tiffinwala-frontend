@@ -23,6 +23,9 @@ List<dynamic> categories = [];
 List<dynamic> items = [];
 List<dynamic> optionSets = [];
 List<dynamic> categoryItems = [];
+List<dynamic> optionSetItemWise = [];
+
+List<dynamic> menu = [];
 
 class _MenuState extends State<Menu> {
   Future<void> getMenu() async {
@@ -38,19 +41,37 @@ class _MenuState extends State<Menu> {
       items = jsonRes['data']['items'];
       optionSets = jsonRes['data']['optionSets'];
 
+      for (var item in items) {
+        List<dynamic> optionSetItems = [];
+        if (item['optionSetIds'] != null) {
+          for (var optionSetId in item['optionSetIds']) {
+            var optionSetItem = optionSets.firstWhere(
+              (element) => element['optionSetId'] == optionSetId,
+            );
+            optionSetItems.add(optionSetItem);
+          }
+        }
+        optionSetItemWise.add(optionSetItems.isNotEmpty ? optionSetItems : []);
+      }
+
+      for (var i = 0; i < items.length; i++) {
+        var newItem = {'item': items[i], 'optionSet': optionSetItemWise[i]};
+        menu.add(newItem);
+      }
+
       for (var category in categories) {
-        log(category['name']);
         List itemCategory =
-            items
+            menu
                 .where(
-                  (element) => element['categoryId'] == category['categoryId'],
+                  (element) =>
+                      element['item']['categoryId'] == category['categoryId'],
                 )
                 .toList();
         categoryItems.add(itemCategory);
-        log(categoryItems.toString());
       }
       categories = categories.reversed.toList();
       categoryItems = categoryItems.reversed.toList();
+
       setState(() {});
     } else {
       log(jsonRes['message']);
@@ -98,7 +119,11 @@ class _MenuState extends State<Menu> {
                     children: List.generate(categories.length, (index) {
                       return Padding(
                         padding: EdgeInsets.only(bottom: 10),
-                        child: Category(title: categories[index]['name'], items: categoryItems[index],));
+                        child: Category(
+                          title: categories[index]['name'],
+                          items: categoryItems[index],
+                        ),
+                      );
                     }),
                   ),
                 ),
