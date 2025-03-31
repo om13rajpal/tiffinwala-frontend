@@ -3,7 +3,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tiffinwala/constants/colors/url.dart';
+import 'package:tiffinwala/constants/url.dart';
 import 'package:tiffinwala/screens/menu.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/modal%20pages/userdetails.dart';

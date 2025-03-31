@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:tiffinwala/constants/colors/url.dart';
+import 'package:tiffinwala/constants/url.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/modal%20pages/otp.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/gradientext.dart';

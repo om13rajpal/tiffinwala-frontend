@@ -30,7 +30,7 @@ class _AuthState extends State<Auth> {
                   },
                 );
               },
-              child: Text('show'),
+              child: Text('Get In'),
             ),
           ),
         ),

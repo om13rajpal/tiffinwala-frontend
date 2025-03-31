@@ -1,14 +1,30 @@
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 class TiffinCheckbox extends StatefulWidget {
-  const TiffinCheckbox({super.key});
+  final bool preChecked;
+  final Function(bool) onChanged;
+  const TiffinCheckbox({
+    super.key,
+    required this.preChecked,
+    required this.onChanged,
+  });
 
   @override
   State<TiffinCheckbox> createState() => _TiffinCheckboxState();
 }
 
 class _TiffinCheckboxState extends State<TiffinCheckbox> {
-  CheckboxState _state = CheckboxState.unchecked;
+  late CheckboxState _state;
+  @override
+  void initState() {
+    super.initState();
+    if (widget.preChecked) {
+      _state = CheckboxState.checked;
+    } else {
+      _state = CheckboxState.unchecked;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Checkbox(
@@ -17,6 +33,9 @@ class _TiffinCheckboxState extends State<TiffinCheckbox> {
         setState(() {
           _state = value;
         });
+        widget.onChanged(
+          value == _state,
+        ); // Pass boolean to callback
       },
     );
   }

@@ -6,7 +6,8 @@ import 'package:tiffinwala/utils/text%20and%20inputs/itemdetails.dart';
 class Category extends StatelessWidget {
   final String title;
   final List<dynamic> items;
-  const Category({super.key, required this.title, required this.items});
+  final VoidCallback updateUI;
+  const Category({super.key, required this.title, required this.items, required this.updateUI});
 
   @override
   Widget build(BuildContext context) {
@@ -61,13 +62,17 @@ class Category extends StatelessWidget {
                 ),
                 child: ItemDetails(
                   price: items[index]['item']['price'],
-                  title: items[index]['item']['itemName'], optionSet: items[index]['optionSet'],
+                  title: items[index]['item']['itemName'],
+                  optionSet: items[index]['optionSet'],
+                  item: items[index]['item'], onTap: updateUI,
                 ),
               );
             }
             return ItemDetails(
               price: items[index]['item']['price'],
-              title: items[index]['item']['itemName'], optionSet: items[index]['optionSet'],
+              title: items[index]['item']['itemName'],
+              optionSet: items[index]['optionSet'],
+              item: items[index]['item'], onTap: updateUI,
             );
           }),
         ),

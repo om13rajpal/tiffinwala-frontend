@@ -5,10 +5,10 @@ import 'package:tiffinwala/screens/auth.dart';
 import 'package:tiffinwala/screens/menu.dart';
 
 void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
   SharedPreferences prefs = await SharedPreferences.getInstance();
   var token = prefs.getString('token');
 
-  WidgetsFlutterBinding.ensureInitialized();
   runApp(Tiffinwala(token: token));
 }
 
@@ -44,6 +44,7 @@ class _TiffinwalaState extends State<Tiffinwala> {
     return ShadcnApp(
       title: 'Tiffinwala',
       debugShowCheckedModeBanner: false,
+      // showPerformanceOverlay: true,
       theme: ThemeData(colorScheme: ColorSchemes.darkGreen(), radius: 0.5),
       home: token ? const Menu() : const Auth(),
     );
