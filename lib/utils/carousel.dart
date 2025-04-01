@@ -58,7 +58,23 @@ class _PosterCarouselState extends State<PosterCarousel> {
                     },
                     child: const Icon(Icons.arrow_back),
                   ),
-                  const Gap(8),
+                  gap(10),
+                  const SizedBox(
+                    width: 200,
+                    child: OverflowMarquee(
+                      duration: Duration(seconds: 4),
+                      fadePortion: 20,
+                      child: Text(
+                        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w400,
+                          color: Color(0xFF888888),
+                        ),
+                      ),
+                    ),
+                  ),
+                  gap(8),
                   OutlineButton(
                     shape: ButtonShape.circle,
                     size: ButtonSize.xSmall,

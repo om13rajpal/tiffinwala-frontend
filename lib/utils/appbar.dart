@@ -1,9 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:flutter/material.dart' as material;
+import 'package:flutter_animate/flutter_animate.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart' as lucide_flutter;
+import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tiffinwala/constants/cart.dart';
 import 'package:tiffinwala/constants/colors/colors.dart';
 import 'package:tiffinwala/screens/auth.dart';
+import 'package:tiffinwala/utils/text%20and%20inputs/toast.dart';
 
 class TiffinAppBar extends StatefulWidget {
   final VoidCallback onTap;
@@ -31,11 +34,11 @@ class _TiffinAppBarState extends State<TiffinAppBar> {
       ),
       floating: true,
       pinned: false,
-      snap: true,
+      snap: false,
       backgroundColor: AppColors.primary,
       forceMaterialTransparency: true,
       actions: [
-        IconButton(
+        material.IconButton(
           onPressed: () async {
             SharedPreferences prefs = await SharedPreferences.getInstance();
             prefs.remove('token');
@@ -45,20 +48,27 @@ class _TiffinAppBarState extends State<TiffinAppBar> {
               MaterialPageRoute(builder: (context) => Auth()),
             );
           },
-          icon: LucideIconWidget(
+          icon: lucide_flutter.LucideIconWidget(
             icon: LucideIcons.search,
             size: 13,
             color: AppColors.icon,
             strokeWidth: 2,
           ),
         ),
-        IconButton(
+        material.IconButton(
           onPressed: () {
             Cart.cart.add({''});
             widget.onTap();
+            showToast(
+              context: context,
+              builder: buildToast,
+              location: ToastLocation.topCenter,
+              dismissible: false,
+              showDuration: 1500.ms
+            );
           },
-          icon: LucideIconWidget(
-            icon: LucideIcons.userRound,
+          icon: lucide_flutter.LucideIconWidget(
+            icon: lucide_flutter.LucideIcons.userRound,
             size: 13,
             color: AppColors.icon,
           ),

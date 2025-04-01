@@ -1,13 +1,15 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart' as lucide_flutter;
+import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tiffinwala/constants/url.dart';
 import 'package:tiffinwala/screens/menu.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/modal%20pages/userdetails.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/inputotp.dart';
+import 'package:tiffinwala/utils/text%20and%20inputs/toast.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 import 'package:http/http.dart' as http;
 
@@ -46,7 +48,16 @@ SliverWoltModalSheetPage otp(
 
       SharedPreferences prefs = await SharedPreferences.getInstance();
       if (!context.mounted) return;
+
       if (jsonRes['status']) {
+        showToast(
+          context: context,
+          builder: buildToast,
+          location: ToastLocation.topCenter,
+        );
+        await Future.delayed(const Duration(milliseconds: 1500));
+        if (!context.mounted) return;
+
         prefs.setString('token', jsonRes['token']);
         Navigator.pushReplacement(
           context,
@@ -77,7 +88,7 @@ SliverWoltModalSheetPage otp(
         onTap: () {
           WoltModalSheet.of(context).showPrevious();
         },
-        child: LucideIconWidget(
+        child: lucide_flutter.LucideIconWidget(
           icon: LucideIcons.arrowUpLeft,
           size: 18,
           strokeWidth: 2,
