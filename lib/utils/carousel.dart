@@ -16,6 +16,8 @@ class _PosterCarouselState extends State<PosterCarousel> {
       child: SizedBox(
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SizedBox(
               height: 150,
@@ -43,9 +45,9 @@ class _PosterCarouselState extends State<PosterCarousel> {
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  SizedBox(height: 20,child: CarouselDotIndicator(itemCount: 5, controller: controller,),),
-                  const Spacer(),
                   OutlineButton(
                     shape: ButtonShape.circle,
                     size: ButtonSize.xSmall,

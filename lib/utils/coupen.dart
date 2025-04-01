@@ -1,6 +1,7 @@
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class CouponCode extends StatelessWidget {
@@ -101,6 +102,7 @@ class CouponCode extends StatelessWidget {
           IconButton(
             onPressed: () {
               log("copy");
+              Clipboard.setData(ClipboardData(text: 'TIFFIN10'));
             },
             icon: LucideIconWidget(icon: LucideIcons.copy, size: 15),
           ),

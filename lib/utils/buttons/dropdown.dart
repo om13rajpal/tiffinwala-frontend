@@ -15,7 +15,7 @@ class _DrowdpwnState extends State<CustomDrowdpwn> {
   Widget build(BuildContext context) {
     return Select<String>(
       itemBuilder: (context, item) {
-        return Text(item, style: const TextStyle(fontSize: 12));
+        return Text(item, style: const TextStyle(fontSize: 10));
       },
       popupConstraints: const BoxConstraints(maxHeight: 300, maxWidth: 200),
       onChanged: (value) {
@@ -29,7 +29,7 @@ class _DrowdpwnState extends State<CustomDrowdpwn> {
             items: SelectItemList(
               children:
                   dropDown
-                      .map((e) => SelectItemButton(value: e, child: Text(e, style: const TextStyle(fontSize: 12))))
+                      .map((e) => SelectItemButton(value: e, child: Text(e, style: const TextStyle(fontSize: 10))))
                       .toList(),
             ),
           ).call,

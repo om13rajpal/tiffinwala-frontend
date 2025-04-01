@@ -40,25 +40,45 @@ class _ItemDetailsState extends State<ItemDetails> {
   @override
   void initState() {
     added = isItemInCart();
-    updateQuantity();
-    print(added);
     super.initState();
   }
 
   bool isItemInCart() {
-    return Cart.cart.any(
+    bool exists = Cart.cart.any(
       (cartItem) => cartItem['item']['itemName'] == widget.item['itemName'],
     );
+
+    if (exists) {
+      counter =
+          Cart.cart.firstWhere(
+            (cartItem) =>
+                cartItem['item']['itemName'] == widget.item['itemName'],
+          )['quantity'];
+    }
+
+    return exists;
   }
 
   void updateQuantity() {
     for (var cartItem in Cart.cart) {
       if (cartItem['item']['itemName'] == widget.item['itemName']) {
         cartItem['quantity'] = counter;
-        print(Cart.cart);
         break;
       }
     }
+  }
+
+  void removeFromCart() {
+    for (var cartItem in Cart.cart) {
+      if (cartItem['item']['itemName'] == widget.item['itemName']) {
+        Cart.cart.remove(cartItem);
+        break;
+      }
+    }
+    setState(() {
+      added = false;
+    });
+    Cart.totalPrice -= widget.price;
   }
 
   late int counter = 1;
@@ -118,10 +138,12 @@ class _ItemDetailsState extends State<ItemDetails> {
               ),
               (added)
                   ? Container(
+                    width: 54,
+                    height: 26,
                     padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
-                      color: AppColors.accent,
+                      color: Color(0xFF3E3E3E),
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -130,36 +152,40 @@ class _ItemDetailsState extends State<ItemDetails> {
                         GestureDetector(
                           onTap:
                               () => setState(() {
+                                counter == 1 ? removeFromCart() : counter--;
                                 updateQuantity();
-                                counter == 1
-                                    ? print('counter at 1')
-                                    : counter--;
                               }),
                           child: LucideIconWidget(
                             icon: LucideIcons.minus,
-                            size: 12,
+                            size: 11,
                           ),
                         ),
-                        Text('${counter}'),
+                        Text(
+                          '$counter',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.secondary,
+                          ),
+                        ),
                         GestureDetector(
                           onTap: () {
-                            updateQuantity();
                             setState(() {
-                              print('set');
                               counter++;
+                              updateQuantity();
                             });
                           },
                           child: LucideIconWidget(
                             icon: LucideIcons.plus,
-                            size: 12,
+                            size: 11,
                           ),
                         ),
                       ],
                     ),
                   )
                   : SizedBox(
-                    width: 50,
-                    height: 24,
+                    width: 54,
+                    height: 26,
                     child: ElevatedButton(
                       style: ButtonStyle(
                         backgroundColor: WidgetStatePropertyAll(
@@ -248,7 +274,6 @@ WoltModalSheetPage addOns(
           // Handle the add to cart action here
           var itemPrice = item['price'];
           for (var options in selectedOptions) {
-            print(options['price']);
             itemPrice += options['price'];
           }
           var cartItem = {
@@ -260,8 +285,6 @@ WoltModalSheetPage addOns(
 
           Cart.cart.add(cartItem);
           Cart.totalPrice += itemPrice;
-          print('Cart: ${Cart.cart}\n\n');
-          print('Total Price: ${Cart.totalPrice}\n\n');
           updateUI();
           updateItemUi();
           Navigator.pop(context);

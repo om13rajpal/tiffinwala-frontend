@@ -186,7 +186,7 @@ class _MenuState extends State<Menu> {
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Column(
-                        spacing: 3,
+                        spacing: 2,
                         crossAxisAlignment: CrossAxisAlignment.start,
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -210,9 +210,9 @@ class _MenuState extends State<Menu> {
                       ),
                       TiffinButton(
                         label: 'CART',
-                        width: 48,
-                        height: 25,
-                        onPressed: () => print('cart'),
+                        width: 50,
+                        height: 24,
+                        onPressed: () => log('cart'),
                       ),
                     ],
                   ),
