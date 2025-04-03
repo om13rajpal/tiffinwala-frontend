@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:tiffinwala/constants/cart.dart';
-import 'package:tiffinwala/constants/colors/colors.dart';
+import 'package:tiffinwala/constants/colors.dart';
+import 'package:tiffinwala/constants/veg.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/buttons/checkbox.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
@@ -12,6 +13,7 @@ class ItemDetails extends StatefulWidget {
   final dynamic item;
   final List<dynamic> optionSet;
   final VoidCallback onTap;
+  final int index;
   const ItemDetails({
     super.key,
     required this.price,
@@ -19,6 +21,7 @@ class ItemDetails extends StatefulWidget {
     required this.optionSet,
     required this.item,
     required this.onTap,
+    required this.index,
   });
 
   @override
@@ -86,6 +89,7 @@ class _ItemDetailsState extends State<ItemDetails> {
   void updateItemUi() {
     setState(() {
       added = isItemInCart();
+      print(widget.item['itemTagIds']);
     });
   }
 
@@ -100,25 +104,40 @@ class _ItemDetailsState extends State<ItemDetails> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Image.asset('assets/icons/veg.png', width: 11, fit: BoxFit.cover),
-              SizedBox(width: 5),
-              Container(
-                padding: EdgeInsets.symmetric(horizontal: 6, vertical: 0.5),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(3.5),
-                  color: Color(0xFFF78080),
-                ),
-                child: Center(
-                  child: Text(
-                    'Best Seller',
-                    style: TextStyle(
-                      fontSize: 6,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFFB30000),
-                    ),
+              (widget.item['itemTagIds'][0] == Classification.veg)
+                  ? Image.asset(
+                    'assets/icons/veg.png',
+                    width: 11,
+                    fit: BoxFit.cover,
+                  )
+                  : Image.asset(
+                    'assets/icons/nonveg.png',
+                    width: 11,
+                    fit: BoxFit.cover,
                   ),
-                ),
-              ),
+              SizedBox(width: 5),
+              (widget.index == 0)
+                  ? Container(
+                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 0.5),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(3.5),
+                      color: Color(0xFFF78080),
+                    ),
+                    child: Center(
+                      child:
+                          (widget.index == 0)
+                              ? Text(
+                                'Best Seller',
+                                style: TextStyle(
+                                  fontSize: 6,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFFB30000),
+                                ),
+                              )
+                              : null,
+                    ),
+                  )
+                  : Container(),
             ],
           ),
           Row(

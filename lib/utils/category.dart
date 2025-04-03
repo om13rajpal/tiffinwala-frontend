@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:mobkit_dashed_border/mobkit_dashed_border.dart';
-import 'package:tiffinwala/constants/colors/colors.dart';
+import 'package:tiffinwala/constants/colors.dart';
+import 'package:tiffinwala/constants/veg.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/itemdetails.dart';
 
 class Category extends StatelessWidget {
   final String title;
   final List<dynamic> items;
   final VoidCallback updateUI;
-  const Category({super.key, required this.title, required this.items, required this.updateUI});
+  const Category({
+    super.key,
+    required this.title,
+    required this.items,
+    required this.updateUI,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -50,30 +56,69 @@ class Category extends StatelessWidget {
               return Container();
             }
 
-            if (index == 0) {
-              return Container(
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(14),
-                  border: DashedBorder.fromBorderSide(
-                    side: BorderSide(color: Colors.black, width: 0.2),
-                    dashLength: 2.5,
-                    spaceLength: 2.5,
-                  ),
-                ),
-                child: ItemDetails(
+            if (Veg.isVeg) {
+              if (items[index]['item']['itemTagIds'][0] == Classification.veg) {
+                if (index == 0) {
+                  return Container(
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      border: DashedBorder.fromBorderSide(
+                        side: BorderSide(color: Colors.black, width: 0.2),
+                        dashLength: 2.5,
+                        spaceLength: 2.5,
+                      ),
+                    ),
+                    child: ItemDetails(
+                      price: items[index]['item']['price'],
+                      title: items[index]['item']['itemName'],
+                      optionSet: items[index]['optionSet'],
+                      item: items[index]['item'],
+                      onTap: updateUI,
+                      index: index,
+                    ),
+                  );
+                }
+                return ItemDetails(
                   price: items[index]['item']['price'],
                   title: items[index]['item']['itemName'],
                   optionSet: items[index]['optionSet'],
-                  item: items[index]['item'], onTap: updateUI,
-                ),
+                  item: items[index]['item'],
+                  onTap: updateUI,
+                  index: index,
+                );
+              }
+            } else {
+              if (index == 0) {
+                return Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(14),
+                    border: DashedBorder.fromBorderSide(
+                      side: BorderSide(color: Colors.black, width: 0.2),
+                      dashLength: 2.5,
+                      spaceLength: 2.5,
+                    ),
+                  ),
+                  child: ItemDetails(
+                    price: items[index]['item']['price'],
+                    title: items[index]['item']['itemName'],
+                    optionSet: items[index]['optionSet'],
+                    item: items[index]['item'],
+                    onTap: updateUI,
+                    index: index,
+                  ),
+                );
+              }
+              return ItemDetails(
+                price: items[index]['item']['price'],
+                title: items[index]['item']['itemName'],
+                optionSet: items[index]['optionSet'],
+                item: items[index]['item'],
+                onTap: updateUI,
+                index: index,
               );
             }
-            return ItemDetails(
-              price: items[index]['item']['price'],
-              title: items[index]['item']['itemName'],
-              optionSet: items[index]['optionSet'],
-              item: items[index]['item'], onTap: updateUI,
-            );
+
+            return Container();
           }),
         ),
       ],

@@ -26,11 +26,7 @@ class CouponCode extends StatelessWidget {
         children: [
           Transform.rotate(
             angle: -1,
-            child: LucideIconWidget(
-              icon: LucideIcons.ticketPercent,
-              size: 35,
-              strokeWidth: 1,
-            ),
+            child: Image.asset('assets/icons/ticket.png', width: 30, fit: BoxFit.contain,)
           ),
           Column(
             mainAxisAlignment: MainAxisAlignment.center,

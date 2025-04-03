@@ -3,8 +3,9 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:tiffinwala/constants/cart.dart';
-import 'package:tiffinwala/constants/colors/colors.dart';
+import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/constants/url.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/category.dart';
@@ -31,6 +32,8 @@ List<dynamic> optionSetItemWise = [];
 List<dynamic> menu = [];
 
 bool showCart = false;
+
+TextEditingController searchController = TextEditingController();
 
 class _MenuState extends State<Menu> {
   Future<void> getMenu() async {
@@ -106,9 +109,9 @@ class _MenuState extends State<Menu> {
         child: Stack(
           children: [
             ScrollConfiguration(
-              behavior: ScrollConfiguration.of(context).copyWith(
-                scrollbars: false,
-              ),
+              behavior: ScrollConfiguration.of(
+                context,
+              ).copyWith(scrollbars: false),
               child: CustomScrollView(
                 physics: BouncingScrollPhysics(),
                 slivers: [
@@ -120,7 +123,65 @@ class _MenuState extends State<Menu> {
                   SliverToBoxAdapter(child: PosterCarousel()),
                   SliverToBoxAdapter(child: SizedBox(height: 10)),
                   SliverToBoxAdapter(child: CouponCode()),
-                  SliverToBoxAdapter(child: SizedBox(height: 5)),
+                  SliverToBoxAdapter(child: SizedBox(height: 7)),
+                  SliverToBoxAdapter(
+                    child: Container(
+                      height: 35,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      child: TextField(
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.secondary,
+                        ),
+                        controller: searchController,
+                        onChanged: (value) {
+                          if (value.isNotEmpty) {
+                            List<List<dynamic>> newCategoryItems = [];
+
+                            for (int i = 0; i < categories.length; i++) {
+                              List<dynamic> filteredItems =
+                                  categoryItems[i].where((element) {
+                                    return element['item']['itemName']
+                                        .toString()
+                                        .toLowerCase()
+                                        .contains(value.toLowerCase());
+                                  }).toList();
+
+                              newCategoryItems.add(filteredItems);
+                            }
+
+                            setState(() {
+                              categoryItems = newCategoryItems;
+                            });
+                          } else {
+                            // Reset to full menu
+                            optionSetItemWise.clear();
+                            menu.clear();
+                            categoryItems.clear();
+                            getMenu();
+                          }
+                        },
+                        cursorOpacityAnimates: true,
+                        decoration: InputDecoration(
+                          hintText: 'Search for items',
+                          hintStyle: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w400,
+                            color: AppColors.secondary.withAlpha(100),
+                          ),
+                          filled: true,
+                          fillColor: AppColors.accent,
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          prefixIcon: Icon(LucideIcons.search, size: 16),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SliverToBoxAdapter(child: SizedBox(height: 7)),
                   SliverToBoxAdapter(
                     child: Container(
                       height: MediaQuery.of(context).size.height * 0.7,
@@ -142,7 +203,7 @@ class _MenuState extends State<Menu> {
                           bottomRight: Radius.circular(20),
                         ),
                         child: Padding(
-                          padding: EdgeInsets.only(top: 5, left: 5, right: 5),
+                          padding: EdgeInsets.all(5),
                           child: ScrollConfiguration(
                             behavior: ScrollConfiguration.of(
                               context,
@@ -152,13 +213,21 @@ class _MenuState extends State<Menu> {
                               shrinkWrap: true,
                               itemCount: categories.length,
                               itemBuilder: (context, index) {
+                                if (index >= categoryItems.length) {
+                                  return SizedBox();
+                                }
+
+                                if (categoryItems[index].length == 0) {
+                                  return SizedBox();
+                                }
+
                                 return Padding(
                                   padding: EdgeInsets.only(bottom: 10),
                                   child: Category(
-                                        title: categories[index]['name'],
-                                        items: categoryItems[index],
-                                        updateUI: updateUI,
-                                      )
+                                    title: categories[index]['name'],
+                                    items: categoryItems[index],
+                                    updateUI: updateUI,
+                                  ),
                                 );
                               },
                             ),
@@ -216,7 +285,14 @@ class _MenuState extends State<Menu> {
                             label: 'CART',
                             width: 50,
                             height: 24,
-                            onPressed: () => log('cart'),
+                            onPressed: () {
+                              // Navigator.push(
+                              //   context,
+                              //   MaterialPageRoute(
+                              //     builder: (context) => CartPage(),
+                              //   ),
+                              // );
+                            },
                           ),
                         ],
                       ),

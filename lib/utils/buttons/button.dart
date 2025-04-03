@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tiffinwala/constants/colors/colors.dart';
+import 'package:tiffinwala/constants/colors.dart';
 
 class TiffinButton extends StatelessWidget {
   final String label;

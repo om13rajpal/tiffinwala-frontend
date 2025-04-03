@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:tiffinwala/constants/colors/colors.dart';
+import 'package:tiffinwala/constants/colors.dart';
 
 class Address extends StatelessWidget {
   const Address({super.key});
