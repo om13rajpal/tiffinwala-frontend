@@ -42,7 +42,8 @@ dependencies:
   shared_preferences: ^2.5.2
   jwt_decoder: ^2.0.1
   flutter_animate: ^4.5.2
-  material_floating_search_bar_2: ^0.5.0
+  flutter_riverpod: ^2.6.1
+  razorpay_flutter: ^1.4.0
 
 dev_dependencies:
   flutter_test:

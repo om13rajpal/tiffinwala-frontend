@@ -14,6 +14,7 @@ class ItemDetails extends StatefulWidget {
   final List<dynamic> optionSet;
   final VoidCallback onTap;
   final int index;
+  final bool isCartItem;
   const ItemDetails({
     super.key,
     required this.price,
@@ -21,7 +22,7 @@ class ItemDetails extends StatefulWidget {
     required this.optionSet,
     required this.item,
     required this.onTap,
-    required this.index,
+    required this.index, required this.isCartItem,
   });
 
   @override
@@ -47,41 +48,48 @@ class _ItemDetailsState extends State<ItemDetails> {
   }
 
   bool isItemInCart() {
-    bool exists = Cart.cart.any(
-      (cartItem) => cartItem['item']['itemName'] == widget.item['itemName'],
+    bool exists = Cart.items.any(
+      (cartItem) => cartItem.item['itemName'] == widget.item['itemName'],
     );
 
     if (exists) {
       counter =
-          Cart.cart.firstWhere(
-            (cartItem) =>
-                cartItem['item']['itemName'] == widget.item['itemName'],
-          )['quantity'];
+          Cart.items
+              .firstWhere(
+                (cartItem) =>
+                    cartItem.item['itemName'] == widget.item['itemName'],
+              )
+              .quantity;
     }
 
     return exists;
   }
 
   void updateQuantity() {
-    for (var cartItem in Cart.cart) {
-      if (cartItem['item']['itemName'] == widget.item['itemName']) {
-        cartItem['quantity'] = counter;
+    for (var cartItem in Cart.items) {
+      if (cartItem.item['itemName'] == widget.item['itemName']) {
+        int index = Cart.items.indexOf(cartItem);
+        Cart.items[index] = CartItem(
+          cartItem.item,
+          cartItem.totalPrice / cartItem.quantity * counter,
+          cartItem.options,
+          counter,
+        );
         break;
       }
     }
   }
 
   void removeFromCart() {
-    for (var cartItem in Cart.cart) {
-      if (cartItem['item']['itemName'] == widget.item['itemName']) {
-        Cart.cart.remove(cartItem);
+    for (var cartItem in Cart.items) {
+      if (cartItem.item['itemName'] == widget.item['itemName']) {
+        Cart.items.remove(cartItem);
         break;
       }
     }
     setState(() {
       added = false;
     });
-    Cart.totalPrice -= widget.price;
   }
 
   late int counter = 1;
@@ -151,7 +159,7 @@ class _ItemDetailsState extends State<ItemDetails> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: AppColors.primary,
+                    color: (widget.isCartItem)?AppColors.secondary : AppColors.primary,
                   ),
                 ),
               ),
@@ -290,20 +298,19 @@ WoltModalSheetPage addOns(
         width: 120,
         height: 30,
         onPressed: () {
-          // Handle the add to cart action here
-          var itemPrice = item['price'];
-          for (var options in selectedOptions) {
-            itemPrice += options['price'];
+          var itemPrice = item['price'].toDouble();
+          for (var option in selectedOptions) {
+            itemPrice += option['price'].toDouble();
           }
-          var cartItem = {
-            'item': item,
-            'options': selectedOptions,
-            'price': itemPrice,
-            'quantity': 1,
-          };
 
-          Cart.cart.add(cartItem);
-          Cart.totalPrice += itemPrice;
+          CartItem cartItem = CartItem(
+            item,
+            itemPrice,
+            List.from(selectedOptions),
+            1,
+          );
+
+          Cart.items.add(cartItem);
           updateUI();
           updateItemUi();
           Navigator.pop(context);

@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:tiffinwala/constants/cart.dart';
 import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/constants/url.dart';
@@ -15,6 +16,9 @@ import 'package:tiffinwala/utils/carousel.dart';
 import 'package:tiffinwala/utils/coupen.dart';
 import 'package:tiffinwala/utils/menucontrols.dart';
 import 'package:http/http.dart' as http;
+import 'package:tiffinwala/utils/text%20and%20inputs/gradientext.dart';
+import 'package:tiffinwala/utils/text%20and%20inputs/itemdetails.dart';
+import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
 class Menu extends StatefulWidget {
   const Menu({super.key});
@@ -36,6 +40,8 @@ bool showCart = false;
 TextEditingController searchController = TextEditingController();
 
 class _MenuState extends State<Menu> {
+  late Razorpay _razorpay;
+
   Future<void> getMenu() async {
     var response = await http.get(
       Uri.parse('${BaseUrl.url}/menu'),
@@ -86,9 +92,43 @@ class _MenuState extends State<Menu> {
     }
   }
 
+  void _openCheckout() {
+    var options = {
+      'key': 'YOUR_API_KEY',
+      'amount': 100,
+      'name': 'Test Corp',
+      'description': 'Test Payment',
+      'prefill': {'contact': '9123456789', 'email': 'test@razorpay.com'},
+      'external': {
+        'wallets': ['paytm'],
+      },
+    };
+
+    try {
+      _razorpay.open(options);
+    } catch (e) {
+      debugPrint('Error: $e');
+    }
+  }
+
+  void _handlePaymentSuccess(PaymentSuccessResponse response) {
+    // Handle successful payment
+    print("Payment Successful: ${response.paymentId}");
+  }
+
+  void _handlePaymentError(PaymentFailureResponse response) {
+    // Handle payment error
+    print("Payment Error: ${response.code} | ${response.message}");
+  }
+
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    // Handle external wallet selection
+    print("External Wallet Selected: ${response.walletName}");
+  }
+
   void updateUI() {
     setState(() {
-      if (Cart.cart.isNotEmpty) {
+      if (Cart.items.isNotEmpty) {
         showCart = true;
       } else {
         showCart = false;
@@ -99,6 +139,11 @@ class _MenuState extends State<Menu> {
   @override
   void initState() {
     getMenu();
+    _razorpay = Razorpay();
+
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
     super.initState();
   }
 
@@ -264,7 +309,7 @@ class _MenuState extends State<Menu> {
                             mainAxisAlignment: MainAxisAlignment.center,
                             children: [
                               Text(
-                                '${Cart.cart.length} items in cart',
+                                '${Cart.items.length} items in cart',
                                 style: TextStyle(
                                   fontSize: 13,
                                   fontWeight: FontWeight.w400,
@@ -272,7 +317,7 @@ class _MenuState extends State<Menu> {
                                 ),
                               ),
                               Text(
-                                '₹ ${Cart.totalPrice}',
+                                '₹ 50',
                                 style: TextStyle(
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w500,
@@ -286,12 +331,12 @@ class _MenuState extends State<Menu> {
                             width: 50,
                             height: 24,
                             onPressed: () {
-                              // Navigator.push(
-                              //   context,
-                              //   MaterialPageRoute(
-                              //     builder: (context) => CartPage(),
-                              //   ),
-                              // );
+                              WoltModalSheet.show(
+                                context: context,
+                                pageListBuilder: (context) {
+                                  return [cart(context, _openCheckout)];
+                                },
+                              );
                             },
                           ),
                         ],
@@ -311,4 +356,86 @@ class _MenuState extends State<Menu> {
       ),
     );
   }
+}
+
+SliverWoltModalSheetPage cart(BuildContext context, VoidCallback openCheckout) {
+  return WoltModalSheetPage(
+    pageTitle: Padding(
+      padding: const EdgeInsets.only(left: 30, right: 30, bottom: 20),
+      child: Row(
+        children: [
+          Text(
+            'View your',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          SizedBox(width: 5),
+          GradientText(text: 'Cart'),
+        ],
+      ),
+    ),
+    stickyActionBar: Container(
+      padding: const EdgeInsets.symmetric(horizontal: 30),
+      width: MediaQuery.of(context).size.width,
+      height: 60,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Column(
+            spacing: 2,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(
+                '${Cart.items.length} items in cart',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w400,
+                  color: AppColors.secondary,
+                ),
+              ),
+              Text(
+                '₹ 50',
+                style: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w500,
+                  color: AppColors.secondary,
+                ),
+              ),
+            ],
+          ),
+          TiffinButton(
+            label: 'PAY NOW',
+            width: 70,
+            height: 27,
+            onPressed: openCheckout,
+          ),
+        ],
+      ),
+    ),
+    forceMaxHeight: false,
+    child: Container(
+      padding: EdgeInsets.symmetric(horizontal: 30),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 15,
+        children: [
+          Column(
+            children: List.generate(Cart.items.length, (index) {
+              return ItemDetails(
+                isCartItem: true,
+                price: Cart.items[index].totalPrice.toInt(),
+                title: Cart.items[index].item['itemName'],
+                optionSet: Cart.items[index].options,
+                item: Cart.items[index].item,
+                onTap: () {},
+                index: index,
+              );
+            }),
+          ),
+          SizedBox(height: 50),
+        ],
+      ),
+    ),
+  );
 }

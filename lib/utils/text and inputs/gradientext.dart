@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 class GradientText extends StatelessWidget {
-  const GradientText({super.key});
+  final String text;
+  const GradientText({super.key, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +15,7 @@ class GradientText extends StatelessWidget {
             end: Alignment.bottomRight,
           ).createShader(bounds),
       child: Text(
-        "Get In",
+        text,
         style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w500,

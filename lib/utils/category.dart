@@ -69,6 +69,7 @@ class Category extends StatelessWidget {
                       ),
                     ),
                     child: ItemDetails(
+                      isCartItem: false,
                       price: items[index]['item']['price'],
                       title: items[index]['item']['itemName'],
                       optionSet: items[index]['optionSet'],
@@ -79,6 +80,7 @@ class Category extends StatelessWidget {
                   );
                 }
                 return ItemDetails(
+                  isCartItem: false,
                   price: items[index]['item']['price'],
                   title: items[index]['item']['itemName'],
                   optionSet: items[index]['optionSet'],
@@ -99,6 +101,7 @@ class Category extends StatelessWidget {
                     ),
                   ),
                   child: ItemDetails(
+                    isCartItem: false,
                     price: items[index]['item']['price'],
                     title: items[index]['item']['itemName'],
                     optionSet: items[index]['optionSet'],
@@ -109,6 +112,7 @@ class Category extends StatelessWidget {
                 );
               }
               return ItemDetails(
+                isCartItem: false,
                 price: items[index]['item']['price'],
                 title: items[index]['item']['itemName'],
                 optionSet: items[index]['optionSet'],

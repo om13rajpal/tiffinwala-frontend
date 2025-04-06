@@ -1,4 +1,12 @@
+class CartItem {
+  final dynamic item;
+  final double totalPrice;
+  final List<dynamic> options;
+  final int quantity;
+
+  CartItem(this.item, this.totalPrice, this.options, this.quantity);
+}
+
 class Cart {
-  static var cart = [];
-  static var totalPrice = 0.0;
+  static List<CartItem> items = [];
 }

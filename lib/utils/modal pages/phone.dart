@@ -50,7 +50,7 @@ SliverWoltModalSheetPage phone(BuildContext context, TextTheme textTheme) {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
               ),
               SizedBox(width: 5),
-              GradientText(),
+              GradientText(text: 'Get In',),
             ],
           ),
           Input(

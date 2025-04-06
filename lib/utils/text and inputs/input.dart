@@ -40,7 +40,7 @@ class Input extends StatelessWidget {
             cursorOpacityAnimates: true,
             enableIMEPersonalizedLearning: true,
             enableInteractiveSelection: true,
-            keyboardType: TextInputType.phone,
+            keyboardType: TextInputType.text,
             stylusHandwritingEnabled: true,
             decoration: InputDecoration(
               enabledBorder: OutlineInputBorder(

@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart' as material;
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart' as lucide_flutter;
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:tiffinwala/constants/cart.dart';
 import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/screens/auth.dart';
-import 'package:tiffinwala/utils/text%20and%20inputs/toast.dart';
 
 class TiffinAppBar extends StatefulWidget {
   final VoidCallback onTap;
@@ -50,7 +47,6 @@ class _TiffinAppBarState extends State<TiffinAppBar> {
       actions: [
         material.IconButton(
           onPressed: () {
-            Cart.cart.add({''});
             widget.onTap();
             logout(context);
           },
