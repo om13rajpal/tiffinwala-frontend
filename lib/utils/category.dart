@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobkit_dashed_border/mobkit_dashed_border.dart';
 import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/constants/veg.dart';
+import 'package:tiffinwala/providers/veg.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/itemdetails.dart';
 
-class Category extends StatelessWidget {
+class Category extends ConsumerWidget {
   final String title;
   final List<dynamic> items;
   final VoidCallback updateUI;
@@ -16,7 +18,9 @@ class Category extends StatelessWidget {
   });
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    print('category build');
+    final isVeg = ref.watch(isVegProvider);
     return Column(
       children: [
         Container(
@@ -56,7 +60,7 @@ class Category extends StatelessWidget {
               return Container();
             }
 
-            if (Veg.isVeg) {
+            if (isVeg) {
               if (items[index]['item']['itemTagIds'][0] == Classification.veg) {
                 if (index == 0) {
                   return Container(

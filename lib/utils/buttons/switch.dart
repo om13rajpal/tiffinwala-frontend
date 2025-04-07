@@ -1,27 +1,23 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
-import 'package:tiffinwala/constants/veg.dart';
+import 'package:tiffinwala/providers/veg.dart';
 
-class VegOnlySwitch extends StatefulWidget {
+class VegOnlySwitch extends ConsumerStatefulWidget {
   final VoidCallback updateUI;
   const VegOnlySwitch({super.key, required this.updateUI});
 
   @override
-  State<VegOnlySwitch> createState() => _VegOnlySwitchState();
+  ConsumerState<VegOnlySwitch> createState() => _VegOnlySwitchState();
 }
 
-bool value = false;
-
-class _VegOnlySwitchState extends State<VegOnlySwitch> {
+class _VegOnlySwitchState extends ConsumerState<VegOnlySwitch> {
   @override
   Widget build(BuildContext context) {
+    final isVeg = ref.watch(isVegProvider);
+
     return Switch(
-      value: value,
-      onChanged:
-          (v) => setState(() {
-            value = v;
-            Veg.isVeg = v;
-            widget.updateUI();
-          }),
+      value: isVeg,
+      onChanged: (v) => ref.read(isVegProvider.notifier).setVeg(v),
     );
   }
 }
