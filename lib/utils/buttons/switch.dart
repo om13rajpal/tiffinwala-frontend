@@ -2,7 +2,8 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:tiffinwala/constants/veg.dart';
 
 class VegOnlySwitch extends StatefulWidget {
-  const VegOnlySwitch({super.key});
+  final VoidCallback updateUI;
+  const VegOnlySwitch({super.key, required this.updateUI});
 
   @override
   State<VegOnlySwitch> createState() => _VegOnlySwitchState();
@@ -19,7 +20,7 @@ class _VegOnlySwitchState extends State<VegOnlySwitch> {
           (v) => setState(() {
             value = v;
             Veg.isVeg = v;
-            print(Veg.isVeg);
+            widget.updateUI();
           }),
     );
   }

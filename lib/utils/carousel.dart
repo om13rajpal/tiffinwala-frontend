@@ -65,7 +65,7 @@ class _PosterCarouselState extends State<PosterCarousel> {
                       duration: Duration(seconds: 4),
                       fadePortion: 20,
                       child: Text(
-                        'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+                        'No more boring meals – try our homestyle tiffin today & get 20% off your first order! Get your first tiffin at just ₹49 – homemade taste, delivered fresh to your doorstep!',
                         style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w400,

@@ -41,6 +41,15 @@ TextEditingController searchController = TextEditingController();
 
 class _MenuState extends State<Menu> {
   late Razorpay _razorpay;
+  late double totalPrice = 0.0;
+
+  void totalCartPrice() {
+    totalPrice = 0.0;
+    for (var item in Cart.items) {
+      totalPrice += item.quantity * item.totalPrice;
+    }
+    setState(() {});
+  }
 
   Future<void> getMenu() async {
     var response = await http.get(
@@ -134,6 +143,7 @@ class _MenuState extends State<Menu> {
         showCart = false;
       }
     });
+    totalCartPrice();
   }
 
   @override
@@ -163,7 +173,7 @@ class _MenuState extends State<Menu> {
                   TiffinAppBar(onTap: updateUI),
                   SliverToBoxAdapter(child: Address()),
                   SliverToBoxAdapter(child: SizedBox(height: 10)),
-                  SliverToBoxAdapter(child: MenuControls()),
+                  SliverToBoxAdapter(child: MenuControls(updateUI: updateUI,)),
                   SliverToBoxAdapter(child: SizedBox(height: 10)),
                   SliverToBoxAdapter(child: PosterCarousel()),
                   SliverToBoxAdapter(child: SizedBox(height: 10)),
@@ -200,7 +210,6 @@ class _MenuState extends State<Menu> {
                               categoryItems = newCategoryItems;
                             });
                           } else {
-                            // Reset to full menu
                             optionSetItemWise.clear();
                             menu.clear();
                             categoryItems.clear();
@@ -317,7 +326,7 @@ class _MenuState extends State<Menu> {
                                 ),
                               ),
                               Text(
-                                '₹ 50',
+                                '₹ ${totalPrice.toInt()}',
                                 style: TextStyle(
                                   fontSize: 12.5,
                                   fontWeight: FontWeight.w500,
@@ -331,10 +340,13 @@ class _MenuState extends State<Menu> {
                             width: 50,
                             height: 24,
                             onPressed: () {
+                              totalCartPrice();
                               WoltModalSheet.show(
                                 context: context,
                                 pageListBuilder: (context) {
-                                  return [cart(context, _openCheckout)];
+                                  return [
+                                    cart(context, _openCheckout, totalPrice),
+                                  ];
                                 },
                               );
                             },
@@ -358,7 +370,11 @@ class _MenuState extends State<Menu> {
   }
 }
 
-SliverWoltModalSheetPage cart(BuildContext context, VoidCallback openCheckout) {
+SliverWoltModalSheetPage cart(
+  BuildContext context,
+  VoidCallback openCheckout,
+  double totalPrice,
+) {
   return WoltModalSheetPage(
     pageTitle: Padding(
       padding: const EdgeInsets.only(left: 30, right: 30, bottom: 20),
@@ -395,7 +411,7 @@ SliverWoltModalSheetPage cart(BuildContext context, VoidCallback openCheckout) {
                 ),
               ),
               Text(
-                '₹ 50',
+                '₹ ${totalPrice.toInt()}',
                 style: TextStyle(
                   fontSize: 12.5,
                   fontWeight: FontWeight.w500,
