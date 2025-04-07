@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:tiffinwala/constants/cart.dart';
 import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/constants/url.dart';
@@ -39,6 +40,7 @@ bool showCart = false;
 TextEditingController searchController = TextEditingController();
 
 class _MenuState extends State<Menu> {
+  late Razorpay _razorpay;
   late double totalPrice = 0.0;
 
   void totalCartPrice() {
@@ -99,39 +101,39 @@ class _MenuState extends State<Menu> {
     }
   }
 
-  // void _openCheckout() {
-  //   var options = {
-  //     'key': 'YOUR_API_KEY',
-  //     'amount': 100,
-  //     'name': 'Test Corp',
-  //     'description': 'Test Payment',
-  //     'prefill': {'contact': '9123456789', 'email': 'test@razorpay.com'},
-  //     'external': {
-  //       'wallets': ['paytm'],
-  //     },
-  //   };
+  void _openCheckout() {
+    var options = {
+      'key': 'rzp_test_U3VZm3qrX8l8I8',
+      'amount': totalPrice * 100,
+      'name': 'Test Corp',
+      'description': 'Test Payment',
+      'prefill': {'contact': '9123456789', 'email': 'test@razorpay.com'},
+      'external': {
+        'wallets': ['paytm'],
+      },
+    };
 
-  //   try {
-  //     _razorpay.open(options);
-  //   } catch (e) {
-  //     debugPrint('Error: $e');
-  //   }
-  // }
+    try {
+      _razorpay.open(options);
+    } catch (e) {
+      debugPrint('Error: $e');
+    }
+  }
 
-  // void _handlePaymentSuccess(PaymentSuccessResponse response) {
-  //   // Handle successful payment
-  //   print("Payment Successful: ${response.paymentId}");
-  // }
+  void _handlePaymentSuccess(PaymentSuccessResponse response) {
+    // Handle successful payment
+    print("Payment Successful: ${response.paymentId}");
+  }
 
-  // void _handlePaymentError(PaymentFailureResponse response) {
-  //   // Handle payment error
-  //   print("Payment Error: ${response.code} | ${response.message}");
-  // }
+  void _handlePaymentError(PaymentFailureResponse response) {
+    // Handle payment error
+    print("Payment Error: ${response.code} | ${response.message}");
+  }
 
-  // void _handleExternalWallet(ExternalWalletResponse response) {
-  //   // Handle external wallet selection
-  //   print("External Wallet Selected: ${response.walletName}");
-  // }
+  void _handleExternalWallet(ExternalWalletResponse response) {
+    // Handle external wallet selection
+    print("External Wallet Selected: ${response.walletName}");
+  }
 
   void updateUI() {
     setState(() {
@@ -147,11 +149,11 @@ class _MenuState extends State<Menu> {
   @override
   void initState() {
     getMenu();
-    // _razorpay = Razorpay();
+    _razorpay = Razorpay();
 
-    // _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
-    // _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
-    // _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
+    _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
+    _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
     super.initState();
   }
 
@@ -342,7 +344,7 @@ class _MenuState extends State<Menu> {
                               WoltModalSheet.show(
                                 context: context,
                                 pageListBuilder: (context) {
-                                  return [cart(context, () {}, totalPrice)];
+                                  return [cart(context, _openCheckout, totalPrice)];
                                 },
                               );
                             },
