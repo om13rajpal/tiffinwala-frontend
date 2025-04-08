@@ -46,7 +46,7 @@ class _MenuState extends State<Menu> {
   void totalCartPrice() {
     totalPrice = 0.0;
     for (var item in Cart.items) {
-      totalPrice += item.quantity * item.totalPrice;
+      totalPrice += item.totalPrice;
     }
     setState(() {});
   }
@@ -344,7 +344,9 @@ class _MenuState extends State<Menu> {
                               WoltModalSheet.show(
                                 context: context,
                                 pageListBuilder: (context) {
-                                  return [cart(context, _openCheckout, totalPrice)];
+                                  return [
+                                    cart(context, _openCheckout, totalPrice),
+                                  ];
                                 },
                               );
                             },
