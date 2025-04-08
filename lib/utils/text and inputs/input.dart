@@ -36,13 +36,13 @@ class Input extends StatelessWidget {
               fontWeight: FontWeight.w500,
               color: AppColors.secondary,
             ),
-            textAlignVertical: TextAlignVertical.center,
             cursorOpacityAnimates: true,
             enableIMEPersonalizedLearning: true,
             enableInteractiveSelection: true,
             keyboardType: TextInputType.text,
             stylusHandwritingEnabled: true,
             decoration: InputDecoration(
+              contentPadding: const EdgeInsets.only(top: 8),
               enabledBorder: OutlineInputBorder(
                 borderSide: BorderSide(
                   color: const Color.fromARGB(255, 94, 94, 94),

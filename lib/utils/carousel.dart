@@ -20,7 +20,7 @@ class _PosterCarouselState extends State<PosterCarousel> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SizedBox(
-              height: 150,
+              height: 190,
               child: Carousel(
                 transition: const CarouselTransition.fading(),
                 controller: controller,
@@ -44,7 +44,6 @@ class _PosterCarouselState extends State<PosterCarousel> {
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Row(
-                mainAxisSize: MainAxisSize.min,
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -60,7 +59,7 @@ class _PosterCarouselState extends State<PosterCarousel> {
                   ),
                   gap(10),
                   const SizedBox(
-                    width: 200,
+                    width: 230,
                     child: OverflowMarquee(
                       duration: Duration(seconds: 4),
                       fadePortion: 20,
@@ -74,7 +73,7 @@ class _PosterCarouselState extends State<PosterCarousel> {
                       ),
                     ),
                   ),
-                  gap(8),
+                  gap(10),
                   OutlineButton(
                     shape: ButtonShape.circle,
                     size: ButtonSize.xSmall,

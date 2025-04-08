@@ -126,7 +126,7 @@ class _ItemDetailsState extends State<ItemDetails> {
               SizedBox(width: 5),
               (widget.index == 0)
                   ? Container(
-                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 0.5),
+                    padding: EdgeInsets.only(left: 6, top: 1.5, bottom: 2.5, right: 6),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(3.5),
                       color: Color(0xFFF78080),
@@ -140,6 +140,7 @@ class _ItemDetailsState extends State<ItemDetails> {
                                   fontSize: 6,
                                   fontWeight: FontWeight.w700,
                                   color: Color(0xFFB30000),
+                                  height: 0
                                 ),
                               )
                               : null,

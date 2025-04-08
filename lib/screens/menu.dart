@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'dart:developer';
 
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' as material;
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart' as lucide;
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:tiffinwala/constants/cart.dart';
 import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/constants/url.dart';
@@ -157,213 +158,228 @@ class _MenuState extends State<Menu> {
     super.initState();
   }
 
+  final GlobalKey<RefreshTriggerState> _refreshTriggerKey =
+      GlobalKey<RefreshTriggerState>();
+
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: SafeArea(
-        child: Stack(
-          children: [
-            ScrollConfiguration(
-              behavior: ScrollConfiguration.of(
-                context,
-              ).copyWith(scrollbars: false),
-              child: CustomScrollView(
-                physics: BouncingScrollPhysics(),
-                slivers: [
-                  TiffinAppBar(onTap: updateUI),
-                  SliverToBoxAdapter(child: Address()),
-                  SliverToBoxAdapter(child: SizedBox(height: 10)),
-                  SliverToBoxAdapter(child: MenuControls(updateUI: updateUI)),
-                  SliverToBoxAdapter(child: SizedBox(height: 10)),
-                  SliverToBoxAdapter(child: PosterCarousel()),
-                  SliverToBoxAdapter(child: SizedBox(height: 10)),
-                  SliverToBoxAdapter(child: CouponCode()),
-                  SliverToBoxAdapter(child: SizedBox(height: 7)),
-                  SliverToBoxAdapter(
-                    child: Container(
-                      height: 35,
-                      padding: const EdgeInsets.symmetric(horizontal: 10),
-                      child: TextField(
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: AppColors.secondary,
-                        ),
-                        controller: searchController,
-                        onChanged: (value) {
-                          if (value.isNotEmpty) {
-                            List<List<dynamic>> newCategoryItems = [];
-
-                            for (int i = 0; i < categories.length; i++) {
-                              List<dynamic> filteredItems =
-                                  categoryItems[i].where((element) {
-                                    return element['item']['itemName']
-                                        .toString()
-                                        .toLowerCase()
-                                        .contains(value.toLowerCase());
-                                  }).toList();
-
-                              newCategoryItems.add(filteredItems);
-                            }
-
-                            setState(() {
-                              categoryItems = newCategoryItems;
-                            });
-                          } else {
-                            optionSetItemWise.clear();
-                            menu.clear();
-                            categoryItems.clear();
-                            getMenu();
-                          }
-                        },
-                        cursorOpacityAnimates: true,
-                        decoration: InputDecoration(
-                          hintText: 'Search for items',
-                          hintStyle: TextStyle(
+    return material.Scaffold(
+      body: RefreshTrigger(
+        
+        key: _refreshTriggerKey,
+        onRefresh: () async {
+          await Future.delayed(const Duration(seconds: 2));
+          getMenu();
+        },
+        child: SafeArea(
+          child: Stack(
+            children: [
+              ScrollConfiguration(
+                behavior: ScrollConfiguration.of(
+                  context,
+                ).copyWith(scrollbars: false),
+                child: CustomScrollView(
+                  physics: BouncingScrollPhysics(),
+                  slivers: [
+                    TiffinAppBar(onTap: updateUI),
+                    SliverToBoxAdapter(child: Address()),
+                    SliverToBoxAdapter(child: SizedBox(height: 10)),
+                    SliverToBoxAdapter(child: MenuControls(updateUI: updateUI)),
+                    SliverToBoxAdapter(child: SizedBox(height: 10)),
+                    SliverToBoxAdapter(child: PosterCarousel()),
+                    SliverToBoxAdapter(child: SizedBox(height: 10)),
+                    SliverToBoxAdapter(child: CouponCode()),
+                    SliverToBoxAdapter(child: SizedBox(height: 7)),
+                    SliverToBoxAdapter(
+                      child: Container(
+                        height: 35,
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: material.TextField(
+                          style: TextStyle(
                             fontSize: 13,
-                            fontWeight: FontWeight.w400,
-                            color: AppColors.secondary.withAlpha(100),
+                            fontWeight: FontWeight.w500,
+                            color: AppColors.secondary,
                           ),
-                          filled: true,
-                          fillColor: AppColors.accent,
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            borderSide: BorderSide.none,
-                          ),
-                          prefixIcon: Icon(LucideIcons.search, size: 16),
-                        ),
-                      ),
-                    ),
-                  ),
-                  SliverToBoxAdapter(child: SizedBox(height: 7)),
-                  SliverToBoxAdapter(
-                    child: Container(
-                      height: MediaQuery.of(context).size.height * 0.7,
-                      margin: EdgeInsets.symmetric(horizontal: 3),
-                      decoration: BoxDecoration(
-                        color: AppColors.secondary,
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(50),
-                          topRight: Radius.circular(50),
-                          bottomLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20),
-                        ),
-                      ),
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.only(
-                          topLeft: Radius.circular(50),
-                          topRight: Radius.circular(50),
-                          bottomLeft: Radius.circular(20),
-                          bottomRight: Radius.circular(20),
-                        ),
-                        child: Padding(
-                          padding: EdgeInsets.all(5),
-                          child: ScrollConfiguration(
-                            behavior: ScrollConfiguration.of(
-                              context,
-                            ).copyWith(scrollbars: false),
-                            child: ListView.builder(
-                              physics: BouncingScrollPhysics(),
-                              shrinkWrap: true,
-                              itemCount: categories.length,
-                              itemBuilder: (context, index) {
-                                if (index >= categoryItems.length) {
-                                  return SizedBox();
-                                }
+                          controller: searchController,
+                          onChanged: (value) {
+                            if (value.isNotEmpty) {
+                              List<List<dynamic>> newCategoryItems = [];
 
-                                if (categoryItems[index].length == 0) {
-                                  return SizedBox();
-                                }
+                              for (int i = 0; i < categories.length; i++) {
+                                List<dynamic> filteredItems =
+                                    categoryItems[i].where((element) {
+                                      return element['item']['itemName']
+                                          .toString()
+                                          .toLowerCase()
+                                          .contains(value.toLowerCase());
+                                    }).toList();
 
-                                return Padding(
-                                  padding: EdgeInsets.only(bottom: 10),
-                                  child: Category(
-                                    title: categories[index]['name'],
-                                    items: categoryItems[index],
-                                    updateUI: updateUI,
-                                  ),
-                                );
-                              },
+                                newCategoryItems.add(filteredItems);
+                              }
+
+                              setState(() {
+                                categoryItems = newCategoryItems;
+                              });
+                            } else {
+                              optionSetItemWise.clear();
+                              menu.clear();
+                              categoryItems.clear();
+                              getMenu();
+                            }
+                          },
+                          cursorOpacityAnimates: true,
+                          decoration: material.InputDecoration(
+                            contentPadding: EdgeInsets.only(top: 9),
+                            hintText: 'Search for items',
+                            hintStyle: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w400,
+                              color: AppColors.secondary.withAlpha(100),
+                            ),
+                            filled: true,
+                            fillColor: AppColors.accent,
+                            border: material.OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            prefixIcon: Icon(
+                              lucide.LucideIcons.search,
+                              size: 16,
                             ),
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  SliverToBoxAdapter(child: SizedBox(height: 5)),
-                ],
-              ),
-            ),
-            Positioned(
-                  bottom: 10,
-                  left: 0,
-                  right: 0,
-                  child: Visibility(
-                    visible: showCart,
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 15),
-                      margin: const EdgeInsets.symmetric(horizontal: 20),
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: AppColors.accent.withAlpha(250),
-                        borderRadius: BorderRadius.circular(15),
-                      ),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Column(
-                            spacing: 2,
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                '${Cart.items.length} items in cart',
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w400,
-                                  color: AppColors.secondary,
-                                ),
-                              ),
-                              Text(
-                                '₹ ${totalPrice.toInt()}',
-                                style: TextStyle(
-                                  fontSize: 12.5,
-                                  fontWeight: FontWeight.w500,
-                                  color: AppColors.secondary,
-                                ),
-                              ),
-                            ],
+                    SliverToBoxAdapter(child: SizedBox(height: 7)),
+                    SliverToBoxAdapter(
+                      child: Container(
+                        height: MediaQuery.of(context).size.height * 0.7,
+                        margin: EdgeInsets.symmetric(horizontal: 3),
+                        decoration: BoxDecoration(
+                          color: AppColors.secondary,
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(50),
+                            topRight: Radius.circular(50),
+                            bottomLeft: Radius.circular(20),
+                            bottomRight: Radius.circular(20),
                           ),
-                          TiffinButton(
-                            label: 'CART',
-                            width: 50,
-                            height: 24,
-                            onPressed: () {
-                              totalCartPrice();
-                              WoltModalSheet.show(
-                                context: context,
-                                pageListBuilder: (context) {
-                                  return [
-                                    cart(context, _openCheckout, totalPrice),
-                                  ];
+                        ),
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(50),
+                            topRight: Radius.circular(50),
+                            bottomLeft: Radius.circular(20),
+                            bottomRight: Radius.circular(20),
+                          ),
+                          child: Padding(
+                            padding: EdgeInsets.all(5),
+                            child: ScrollConfiguration(
+                              behavior: ScrollConfiguration.of(
+                                context,
+                              ).copyWith(scrollbars: false),
+                              child: ListView.builder(
+                                physics: BouncingScrollPhysics(),
+                                shrinkWrap: true,
+                                itemCount: categories.length,
+                                itemBuilder: (context, index) {
+                                  if (index >= categoryItems.length) {
+                                    return SizedBox();
+                                  }
+
+                                  if (categoryItems[index].length == 0) {
+                                    return SizedBox();
+                                  }
+
+                                  return Padding(
+                                    padding: EdgeInsets.only(bottom: 10),
+                                    child: Category(
+                                      title: categories[index]['name'],
+                                      items: categoryItems[index],
+                                      updateUI: updateUI,
+                                    ),
+                                  );
                                 },
-                              );
-                            },
+                              ),
+                            ),
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                )
-                .animate(key: ValueKey(showCart))
-                .slideY(
-                  begin: 1,
-                  end: 0,
-                  duration: 500.ms,
-                  curve: Curves.elasticOut,
+                    SliverToBoxAdapter(child: SizedBox(height: 5)),
+                  ],
                 ),
-          ],
+              ),
+              Positioned(
+                    bottom: 10,
+                    left: 0,
+                    right: 0,
+                    child: Visibility(
+                      visible: showCart,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 15),
+                        margin: const EdgeInsets.symmetric(horizontal: 20),
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: AppColors.accent.withAlpha(250),
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Column(
+                              spacing: 2,
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text(
+                                  '${Cart.items.length} items in cart',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w400,
+                                    color: AppColors.secondary,
+                                  ),
+                                ),
+                                Text(
+                                  '₹ ${totalPrice.toInt()}',
+                                  style: TextStyle(
+                                    fontSize: 12.5,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.secondary,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            TiffinButton(
+                              label: 'CART',
+                              width: 50,
+                              height: 24,
+                              onPressed: () {
+                                totalCartPrice();
+                                WoltModalSheet.show(
+                                  context: context,
+                                  pageListBuilder: (context) {
+                                    return [
+                                      cart(context, _openCheckout, totalPrice),
+                                    ];
+                                  },
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  )
+                  .animate(key: ValueKey(showCart))
+                  .slideY(
+                    begin: 1,
+                    end: 0,
+                    duration: 500.ms,
+                    curve: Curves.elasticOut,
+                  ),
+            ],
+          ),
         ),
       ),
     );
