@@ -3,29 +3,29 @@ import 'dart:developer';
 
 import 'package:flutter/material.dart' as material;
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart' as lucide;
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
-import 'package:tiffinwala/constants/cart.dart';
 import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/constants/url.dart';
+import 'package:tiffinwala/providers/cart.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/category.dart';
+import 'package:tiffinwala/utils/modal%20pages/cart.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/address.dart';
 import 'package:tiffinwala/utils/appbar.dart';
 import 'package:tiffinwala/utils/carousel.dart';
 import 'package:tiffinwala/utils/coupen.dart';
 import 'package:tiffinwala/utils/menucontrols.dart';
 import 'package:http/http.dart' as http;
-import 'package:tiffinwala/utils/text%20and%20inputs/gradientext.dart';
-import 'package:tiffinwala/utils/text%20and%20inputs/itemdetails.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
-class Menu extends StatefulWidget {
+class Menu extends ConsumerStatefulWidget {
   const Menu({super.key});
 
   @override
-  State<Menu> createState() => _MenuState();
+  ConsumerState<Menu> createState() => _MenuState();
 }
 
 List<dynamic> categories = [];
@@ -36,21 +36,10 @@ List<dynamic> optionSetItemWise = [];
 
 List<dynamic> menu = [];
 
-bool showCart = false;
-
 TextEditingController searchController = TextEditingController();
 
-class _MenuState extends State<Menu> {
+class _MenuState extends ConsumerState<Menu> {
   late Razorpay _razorpay;
-  late double totalPrice = 0.0;
-
-  void totalCartPrice() {
-    totalPrice = 0.0;
-    for (var item in Cart.items) {
-      totalPrice += item.totalPrice;
-    }
-    setState(() {});
-  }
 
   Future<void> getMenu() async {
     var response = await http.get(
@@ -102,10 +91,10 @@ class _MenuState extends State<Menu> {
     }
   }
 
-  void _openCheckout() {
+  void _openCheckout(double price) {
     var options = {
       'key': 'rzp_test_U3VZm3qrX8l8I8',
-      'amount': totalPrice * 100,
+      'amount': price * 100,
       'name': 'Test Corp',
       'description': 'Test Payment',
       'prefill': {'contact': '9123456789', 'email': 'test@razorpay.com'},
@@ -136,17 +125,6 @@ class _MenuState extends State<Menu> {
     print("External Wallet Selected: ${response.walletName}");
   }
 
-  void updateUI() {
-    setState(() {
-      if (Cart.items.isNotEmpty) {
-        showCart = true;
-      } else {
-        showCart = false;
-      }
-    });
-    totalCartPrice();
-  }
-
   @override
   void initState() {
     getMenu();
@@ -163,9 +141,12 @@ class _MenuState extends State<Menu> {
 
   @override
   Widget build(BuildContext context) {
+    List<CartItems> cartItems = ref.watch(cartProvider);
+    double price = ref.watch(
+      cartProvider.notifier.select((cart) => cart.getTotalPrice()),
+    );
     return material.Scaffold(
       body: RefreshTrigger(
-        
         key: _refreshTriggerKey,
         onRefresh: () async {
           await Future.delayed(const Duration(seconds: 2));
@@ -181,10 +162,10 @@ class _MenuState extends State<Menu> {
                 child: CustomScrollView(
                   physics: BouncingScrollPhysics(),
                   slivers: [
-                    TiffinAppBar(onTap: updateUI),
+                    TiffinAppBar(),
                     SliverToBoxAdapter(child: Address()),
                     SliverToBoxAdapter(child: SizedBox(height: 10)),
-                    SliverToBoxAdapter(child: MenuControls(updateUI: updateUI)),
+                    SliverToBoxAdapter(child: MenuControls()),
                     SliverToBoxAdapter(child: SizedBox(height: 10)),
                     SliverToBoxAdapter(child: PosterCarousel()),
                     SliverToBoxAdapter(child: SizedBox(height: 10)),
@@ -295,7 +276,6 @@ class _MenuState extends State<Menu> {
                                     child: Category(
                                       title: categories[index]['name'],
                                       items: categoryItems[index],
-                                      updateUI: updateUI,
                                     ),
                                   );
                                 },
@@ -314,7 +294,7 @@ class _MenuState extends State<Menu> {
                     left: 0,
                     right: 0,
                     child: Visibility(
-                      visible: showCart,
+                      visible: cartItems.isNotEmpty,
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 15),
                         margin: const EdgeInsets.symmetric(horizontal: 20),
@@ -333,7 +313,7 @@ class _MenuState extends State<Menu> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  '${Cart.items.length} items in cart',
+                                  '${cartItems.length} items in cart',
                                   style: TextStyle(
                                     fontSize: 13,
                                     fontWeight: FontWeight.w400,
@@ -341,7 +321,7 @@ class _MenuState extends State<Menu> {
                                   ),
                                 ),
                                 Text(
-                                  '₹ ${totalPrice.toInt()}',
+                                  '₹ $price',
                                   style: TextStyle(
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w500,
@@ -355,12 +335,15 @@ class _MenuState extends State<Menu> {
                               width: 50,
                               height: 24,
                               onPressed: () {
-                                totalCartPrice();
                                 WoltModalSheet.show(
                                   context: context,
                                   pageListBuilder: (context) {
                                     return [
-                                      cart(context, _openCheckout, totalPrice),
+                                      cart(
+                                        context,
+                                        () => _openCheckout(price),
+                                        ref,
+                                      ),
                                     ];
                                   },
                                 );
@@ -371,7 +354,7 @@ class _MenuState extends State<Menu> {
                       ),
                     ),
                   )
-                  .animate(key: ValueKey(showCart))
+                  .animate(key: ValueKey(cartItems.isNotEmpty))
                   .slideY(
                     begin: 1,
                     end: 0,
@@ -384,90 +367,4 @@ class _MenuState extends State<Menu> {
       ),
     );
   }
-}
-
-SliverWoltModalSheetPage cart(
-  BuildContext context,
-  VoidCallback openCheckout,
-  double totalPrice,
-) {
-  return WoltModalSheetPage(
-    pageTitle: Padding(
-      padding: const EdgeInsets.only(left: 30, right: 30, bottom: 20),
-      child: Row(
-        children: [
-          Text(
-            'View your',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-          ),
-          SizedBox(width: 5),
-          GradientText(text: 'Cart'),
-        ],
-      ),
-    ),
-    stickyActionBar: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 30),
-      width: MediaQuery.of(context).size.width,
-      height: 60,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          Column(
-            spacing: 2,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(
-                '${Cart.items.length} items in cart',
-                style: TextStyle(
-                  fontSize: 13,
-                  fontWeight: FontWeight.w400,
-                  color: AppColors.secondary,
-                ),
-              ),
-              Text(
-                '₹ ${totalPrice.toInt()}',
-                style: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w500,
-                  color: AppColors.secondary,
-                ),
-              ),
-            ],
-          ),
-          TiffinButton(
-            label: 'PAY NOW',
-            width: 70,
-            height: 27,
-            onPressed: openCheckout,
-          ),
-        ],
-      ),
-    ),
-    forceMaxHeight: false,
-    child: Container(
-      padding: EdgeInsets.symmetric(horizontal: 30),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: 15,
-        children: [
-          Column(
-            children: List.generate(Cart.items.length, (index) {
-              return ItemDetails(
-                isCartItem: true,
-                price: Cart.items[index].totalPrice.toInt(),
-                title: Cart.items[index].item['itemName'],
-                optionSet: Cart.items[index].options,
-                item: Cart.items[index].item,
-                onTap: () {},
-                index: index,
-              );
-            }),
-          ),
-          SizedBox(height: 50),
-        ],
-      ),
-    ),
-  );
 }

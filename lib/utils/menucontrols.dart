@@ -4,8 +4,7 @@ import 'package:tiffinwala/utils/buttons/dropdown.dart';
 import 'package:tiffinwala/utils/buttons/switch.dart';
 
 class MenuControls extends StatelessWidget {
-  final VoidCallback updateUI;
-  const MenuControls({super.key, required this.updateUI});
+  const MenuControls({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +24,7 @@ class MenuControls extends StatelessWidget {
             ),
           ),
           SizedBox(width: 5),
-          VegOnlySwitch(updateUI: updateUI,),
+          VegOnlySwitch(),
         ],
       ),
     );

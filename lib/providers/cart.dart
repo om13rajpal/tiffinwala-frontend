@@ -1,15 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class CartItem {
+class CartItems {
   final dynamic item;
   final double totalPrice;
   final List<dynamic> options;
   final int quantity;
 
-  CartItem(this.item, this.totalPrice, this.options, this.quantity);
+  CartItems(this.item, this.totalPrice, this.options, this.quantity);
 }
 
-class CartNotifier extends StateNotifier<List<CartItem>> {
+class CartNotifier extends StateNotifier<List<CartItems>> {
   CartNotifier() : super([]);
 
   void addItem(
@@ -18,20 +18,25 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
     List<dynamic> options,
     int quantity,
   ) {
-    final cartItem = CartItem(item, totalPrice, options, quantity);
+    final cartItem = CartItems(item, totalPrice, options, quantity);
     state = [...state, cartItem];
   }
 
   void removeItem(dynamic item) {
-    state = state.where((cartItem) => cartItem.item != item).toList();
+    state =
+        state
+            .where((cartItem) => cartItem.item['itemName'] != item['itemName'])
+            .toList();
   }
 
   void decrementCart(dynamic item) {
-    final index = state.indexWhere((cartItem) => cartItem.item == item);
+    final index = state.indexWhere(
+      (cartItem) => cartItem.item['itemName'] == item['itemName'],
+    );
     if (index != -1) {
       final cartItem = state[index];
       if (cartItem.quantity > 1) {
-        final updatedItem = CartItem(
+        final updatedItem = CartItems(
           cartItem.item,
           cartItem.totalPrice,
           cartItem.options,
@@ -49,10 +54,12 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
   }
 
   void incrementCart(dynamic item) {
-    final index = state.indexWhere((cartItem) => cartItem.item == item);
+    final index = state.indexWhere(
+      (cartItem) => cartItem.item['itemName'] == item['itemName'],
+    );
     if (index != -1) {
       final cartItem = state[index];
-      final updatedItem = CartItem(
+      final updatedItem = CartItems(
         cartItem.item,
         cartItem.totalPrice,
         cartItem.options,
@@ -65,8 +72,32 @@ class CartNotifier extends StateNotifier<List<CartItem>> {
       ];
     }
   }
+
+  double getTotalPrice() {
+    double total = 0.0;
+    for (var item in state) {
+      total += item.totalPrice * item.quantity;
+    }
+    return total;
+  }
+
+  bool itemExists(dynamic item) {
+    return state.any(
+      (cartItem) => cartItem.item['itemName'] == item['itemName'],
+    );
+  }
+
+  int quantityCount(dynamic item) {
+    final index = state.indexWhere(
+      (cartItem) => cartItem.item['itemName'] == item['itemName'],
+    );
+    if (index != -1) {
+      return state[index].quantity;
+    }
+    return 0;
+  }
 }
 
-final cartProvider = StateNotifierProvider<CartNotifier, List<CartItem>>(
+final cartProvider = StateNotifierProvider<CartNotifier, List<CartItems>>(
   (ref) => CartNotifier(),
 );

@@ -6,8 +6,7 @@ import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/screens/auth.dart';
 
 class TiffinAppBar extends StatefulWidget {
-  final VoidCallback onTap;
-  const TiffinAppBar({super.key, required this.onTap});
+  const TiffinAppBar({super.key});
 
   @override
   State<TiffinAppBar> createState() => _TiffinAppBarState();
@@ -47,7 +46,6 @@ class _TiffinAppBarState extends State<TiffinAppBar> {
       actions: [
         material.IconButton(
           onPressed: () {
-            widget.onTap();
             logout(context);
           },
           icon: lucide_flutter.LucideIconWidget(

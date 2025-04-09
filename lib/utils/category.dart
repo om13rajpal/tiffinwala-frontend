@@ -9,17 +9,14 @@ import 'package:tiffinwala/utils/text%20and%20inputs/itemdetails.dart';
 class Category extends ConsumerWidget {
   final String title;
   final List<dynamic> items;
-  final VoidCallback updateUI;
   const Category({
     super.key,
     required this.title,
     required this.items,
-    required this.updateUI,
   });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    print('category build');
     final isVeg = ref.watch(isVegProvider);
     return Column(
       children: [
@@ -78,7 +75,6 @@ class Category extends ConsumerWidget {
                       title: items[index]['item']['itemName'],
                       optionSet: items[index]['optionSet'],
                       item: items[index]['item'],
-                      onTap: updateUI,
                       index: index,
                     ),
                   );
@@ -89,7 +85,6 @@ class Category extends ConsumerWidget {
                   title: items[index]['item']['itemName'],
                   optionSet: items[index]['optionSet'],
                   item: items[index]['item'],
-                  onTap: updateUI,
                   index: index,
                 );
               }
@@ -110,7 +105,6 @@ class Category extends ConsumerWidget {
                     title: items[index]['item']['itemName'],
                     optionSet: items[index]['optionSet'],
                     item: items[index]['item'],
-                    onTap: updateUI,
                     index: index,
                   ),
                 );
@@ -121,7 +115,6 @@ class Category extends ConsumerWidget {
                 title: items[index]['item']['itemName'],
                 optionSet: items[index]['optionSet'],
                 item: items[index]['item'],
-                onTap: updateUI,
                 index: index,
               );
             }

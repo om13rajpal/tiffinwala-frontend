@@ -3,8 +3,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:tiffinwala/providers/veg.dart';
 
 class VegOnlySwitch extends ConsumerStatefulWidget {
-  final VoidCallback updateUI;
-  const VegOnlySwitch({super.key, required this.updateUI});
+  const VegOnlySwitch({super.key});
 
   @override
   ConsumerState<VegOnlySwitch> createState() => _VegOnlySwitchState();

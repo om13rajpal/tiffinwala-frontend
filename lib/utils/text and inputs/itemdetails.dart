@@ -1,18 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
-import 'package:tiffinwala/constants/cart.dart';
 import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/constants/veg.dart';
+import 'package:tiffinwala/providers/cart.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/buttons/checkbox.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
-class ItemDetails extends StatefulWidget {
+class ItemDetails extends ConsumerStatefulWidget {
   final int price;
   final String title;
   final dynamic item;
   final List<dynamic> optionSet;
-  final VoidCallback onTap;
   final int index;
   final bool isCartItem;
   const ItemDetails({
@@ -21,12 +21,12 @@ class ItemDetails extends StatefulWidget {
     required this.title,
     required this.optionSet,
     required this.item,
-    required this.onTap,
-    required this.index, required this.isCartItem,
+    required this.index,
+    required this.isCartItem,
   });
 
   @override
-  State<ItemDetails> createState() => _ItemDetailsState();
+  ConsumerState<ItemDetails> createState() => _ItemDetailsState();
 }
 
 List<dynamic> selectedOptions = [];
@@ -39,70 +39,16 @@ void handleCheckbox(dynamic option, bool isChecked) {
   }
 }
 
-class _ItemDetailsState extends State<ItemDetails> {
-  late bool added = false;
-  @override
-  void initState() {
-    added = isItemInCart();
-    super.initState();
-  }
-
-  bool isItemInCart() {
-    bool exists = Cart.items.any(
-      (cartItem) => cartItem.item['itemName'] == widget.item['itemName'],
-    );
-
-    if (exists) {
-      counter =
-          Cart.items
-              .firstWhere(
-                (cartItem) =>
-                    cartItem.item['itemName'] == widget.item['itemName'],
-              )
-              .quantity;
-    }
-
-    return exists;
-  }
-
-  void updateQuantity() {
-    for (var cartItem in Cart.items) {
-      if (cartItem.item['itemName'] == widget.item['itemName']) {
-        int index = Cart.items.indexOf(cartItem);
-        Cart.items[index] = CartItem(
-          cartItem.item,
-          cartItem.totalPrice / cartItem.quantity * counter,
-          cartItem.options,
-          counter,
-        );
-        break;
-      }
-    }
-  }
-
-  void removeFromCart() {
-    for (var cartItem in Cart.items) {
-      if (cartItem.item['itemName'] == widget.item['itemName']) {
-        Cart.items.remove(cartItem);
-        break;
-      }
-    }
-    setState(() {
-      added = false;
-    });
-  }
-
-  late int counter = 1;
-
-  void updateItemUi() {
-    setState(() {
-      added = isItemInCart();
-      print(widget.item['itemTagIds']);
-    });
-  }
-
+class _ItemDetailsState extends ConsumerState<ItemDetails> {
   @override
   Widget build(BuildContext context) {
+    int counter = ref.watch(
+      cartProvider.notifier.select((cart) => cart.quantityCount(widget.item)),
+    );
+
+    bool itemExists = ref.watch(
+      cartProvider.notifier.select((cart) => cart.itemExists(widget.item)),
+    );
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       child: Column(
@@ -126,7 +72,12 @@ class _ItemDetailsState extends State<ItemDetails> {
               SizedBox(width: 5),
               (widget.index == 0)
                   ? Container(
-                    padding: EdgeInsets.only(left: 6, top: 1.5, bottom: 2.5, right: 6),
+                    padding: EdgeInsets.only(
+                      left: 6,
+                      top: 1.5,
+                      bottom: 2.5,
+                      right: 6,
+                    ),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(3.5),
                       color: Color(0xFFF78080),
@@ -140,7 +91,7 @@ class _ItemDetailsState extends State<ItemDetails> {
                                   fontSize: 6,
                                   fontWeight: FontWeight.w700,
                                   color: Color(0xFFB30000),
-                                  height: 0
+                                  height: 0,
                                 ),
                               )
                               : null,
@@ -160,11 +111,14 @@ class _ItemDetailsState extends State<ItemDetails> {
                   style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
-                    color: (widget.isCartItem)?AppColors.secondary : AppColors.primary,
+                    color:
+                        (widget.isCartItem)
+                            ? AppColors.secondary
+                            : AppColors.primary,
                   ),
                 ),
               ),
-              (added)
+              (itemExists)
                   ? Container(
                     width: 54,
                     height: 26,
@@ -179,10 +133,9 @@ class _ItemDetailsState extends State<ItemDetails> {
                       children: [
                         GestureDetector(
                           onTap:
-                              () => setState(() {
-                                counter == 1 ? removeFromCart() : counter--;
-                                updateQuantity();
-                              }),
+                              () => ref
+                                  .read(cartProvider.notifier)
+                                  .decrementCart(widget.item),
                           child: LucideIconWidget(
                             icon: LucideIcons.minus,
                             size: 11,
@@ -197,12 +150,10 @@ class _ItemDetailsState extends State<ItemDetails> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: () {
-                            setState(() {
-                              counter++;
-                              updateQuantity();
-                            });
-                          },
+                          onTap:
+                              () => ref
+                                  .read(cartProvider.notifier)
+                                  .incrementCart(widget.item),
                           child: LucideIconWidget(
                             icon: LucideIcons.plus,
                             size: 11,
@@ -239,8 +190,7 @@ class _ItemDetailsState extends State<ItemDetails> {
                                 Theme.of(context).textTheme,
                                 widget.optionSet,
                                 widget.item,
-                                widget.onTap,
-                                updateItemUi,
+                                ref,
                               ),
                             ];
                           },
@@ -278,8 +228,7 @@ WoltModalSheetPage addOns(
   TextTheme textTheme,
   List<dynamic> optionSet,
   dynamic item,
-  VoidCallback updateUI,
-  VoidCallback updateItemUi,
+  WidgetRef ref,
 ) {
   return WoltModalSheetPage(
     hasSabGradient: false,
@@ -304,16 +253,9 @@ WoltModalSheetPage addOns(
             itemPrice += option['price'].toDouble();
           }
 
-          CartItem cartItem = CartItem(
-            item,
-            itemPrice,
-            List.from(selectedOptions),
-            1,
-          );
-
-          Cart.items.add(cartItem);
-          updateUI();
-          updateItemUi();
+          ref
+              .read(cartProvider.notifier)
+              .addItem(item, itemPrice, selectedOptions, 1);
           Navigator.pop(context);
         },
       ),
