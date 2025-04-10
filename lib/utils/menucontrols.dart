@@ -13,7 +13,7 @@ class MenuControls extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SizedBox(width: 105, child: CustomDrowdpwn()),
+          SizedBox(width: 110, child: CustomDrowdpwn()),
           SizedBox(width: 25),
           Text(
             'Veg only',
