@@ -42,13 +42,16 @@ void handleCheckbox(dynamic option, bool isChecked) {
 class _ItemDetailsState extends ConsumerState<ItemDetails> {
   @override
   Widget build(BuildContext context) {
-    int counter = ref.watch(
-      cartProvider.notifier.select((cart) => cart.quantityCount(widget.item)),
-    );
+    final cart = ref.watch(cartProvider);
+    final counter =
+        cart
+            .firstWhere(
+              (item) => item.item['itemName'] == widget.item['itemName'],
+              orElse: () => CartItems(widget.item, 0.0, [], 0),
+            )
+            .quantity;
+    final itemExists = counter > 0;
 
-    bool itemExists = ref.watch(
-      cartProvider.notifier.select((cart) => cart.itemExists(widget.item)),
-    );
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       child: Column(
