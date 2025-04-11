@@ -343,7 +343,6 @@ class _MenuState extends ConsumerState<Menu> {
                                         cart(
                                           context,
                                           () => _openCheckout(price),
-                                          ref,
                                         ),
                                       ];
                                     },

@@ -4,6 +4,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tiffinwala/screens/auth.dart';
 import 'package:tiffinwala/screens/menu.dart';
+import 'package:tiffinwala/screens/profile.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,7 +48,8 @@ class _TiffinwalaState extends State<Tiffinwala> {
       debugShowCheckedModeBanner: false,
       // showPerformanceOverlay: true,
       theme: ThemeData(colorScheme: ColorSchemes.darkNeutral(), radius: 0.5),
-      home: token ? const Menu() : const Auth(),
+      // home: token ? const Menu() : const Auth(),
+      home: Profile(),
     );
   }
 }
