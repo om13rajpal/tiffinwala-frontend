@@ -16,7 +16,7 @@ class Profile extends StatelessWidget {
           behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
           child: CustomScrollView(
             slivers: [
-              TiffinAppBar(),
+              TiffinAppBar(centerTitle: true, title: 'Profile',),
               SliverToBoxAdapter(child: SizedBox(height: 20)),
               SliverToBoxAdapter(
                 child: Padding(

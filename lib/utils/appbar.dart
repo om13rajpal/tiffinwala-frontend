@@ -4,9 +4,16 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/screens/auth.dart';
+import 'package:tiffinwala/screens/profile.dart';
 
 class TiffinAppBar extends StatefulWidget {
-  const TiffinAppBar({super.key});
+  final bool centerTitle;
+  final String title;
+  const TiffinAppBar({
+    super.key,
+    required this.centerTitle,
+    required this.title,
+  });
 
   @override
   State<TiffinAppBar> createState() => _TiffinAppBarState();
@@ -27,6 +34,23 @@ class _TiffinAppBarState extends State<TiffinAppBar> {
   Widget build(BuildContext context) {
     return SliverAppBar(
       automaticallyImplyLeading: false,
+      leadingWidth: (widget.centerTitle) ? 38 : 0,
+      leading:
+          (widget.centerTitle)
+              ? material.Padding(
+                padding: const EdgeInsets.only(left: 20),
+                child: GestureDetector(
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
+                  child: lucide_flutter.LucideIconWidget(
+                    icon: lucide_flutter.LucideIcons.arrowUpLeft,
+                    color: AppColors.icon,
+                  ),
+                ),
+              )
+              : null,
+      centerTitle: widget.centerTitle,
       elevation: 0,
       actionsPadding: EdgeInsets.symmetric(horizontal: 10),
       titleSpacing: 20,
@@ -43,18 +67,24 @@ class _TiffinAppBarState extends State<TiffinAppBar> {
       snap: false,
       backgroundColor: AppColors.primary,
       forceMaterialTransparency: true,
-      actions: [
-        material.IconButton(
-          onPressed: () {
-            logout(context);
-          },
-          icon: lucide_flutter.LucideIconWidget(
-            icon: lucide_flutter.LucideIcons.userRound,
-            size: 13,
-            color: AppColors.icon,
-          ),
-        ),
-      ],
+      actions:
+          (widget.centerTitle)
+              ? null
+              : [
+                material.IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) => Profile()),
+                    );
+                  },
+                  icon: lucide_flutter.LucideIconWidget(
+                    icon: lucide_flutter.LucideIcons.userRound,
+                    size: 13,
+                    color: AppColors.icon,
+                  ),
+                ),
+              ],
     );
   }
 }

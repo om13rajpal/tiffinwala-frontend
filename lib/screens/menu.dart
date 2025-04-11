@@ -163,8 +163,11 @@ class _MenuState extends ConsumerState<Menu> {
                   child: CustomScrollView(
                     physics: BouncingScrollPhysics(),
                     slivers: [
-                      TiffinAppBar(),
-                      SliverToBoxAdapter(child: Address()),
+                      TiffinAppBar(centerTitle: false, title: 'Tiffinwala',),
+                      SliverToBoxAdapter(child: material.Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Address(),
+                      )),
                       SliverToBoxAdapter(child: SizedBox(height: 10)),
                       SliverToBoxAdapter(child: MenuControls()),
                       SliverToBoxAdapter(child: SizedBox(height: 10)),
