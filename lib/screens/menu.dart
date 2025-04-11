@@ -95,7 +95,7 @@ class _MenuState extends ConsumerState<Menu> {
     var options = {
       'key': 'rzp_test_U3VZm3qrX8l8I8',
       'amount': price * 100,
-      'name': 'Test Corp',
+      'name': 'Tiffinwala',
       'description': 'Test Payment',
       'prefill': {'contact': '9123456789', 'email': 'test@razorpay.com'},
       'external': {
@@ -112,17 +112,17 @@ class _MenuState extends ConsumerState<Menu> {
 
   void _handlePaymentSuccess(PaymentSuccessResponse response) {
     // Handle successful payment
-    print("Payment Successful: ${response.paymentId}");
+    log("Payment Successful: ${response.paymentId}");
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
     // Handle payment error
-    print("Payment Error: ${response.code} | ${response.message}");
+    log("Payment Error: ${response.code} | ${response.message}");
   }
 
   void _handleExternalWallet(ExternalWalletResponse response) {
     // Handle external wallet selection
-    print("External Wallet Selected: ${response.walletName}");
+    log("External Wallet Selected: ${response.walletName}");
   }
 
   @override
@@ -163,11 +163,13 @@ class _MenuState extends ConsumerState<Menu> {
                   child: CustomScrollView(
                     physics: BouncingScrollPhysics(),
                     slivers: [
-                      TiffinAppBar(centerTitle: false, title: 'Tiffinwala',),
-                      SliverToBoxAdapter(child: material.Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Address(),
-                      )),
+                      TiffinAppBar(centerTitle: false, title: 'Tiffinwala'),
+                      SliverToBoxAdapter(
+                        child: material.Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: Address(),
+                        ),
+                      ),
                       SliverToBoxAdapter(child: SizedBox(height: 10)),
                       SliverToBoxAdapter(child: MenuControls()),
                       SliverToBoxAdapter(child: SizedBox(height: 10)),
@@ -189,7 +191,7 @@ class _MenuState extends ConsumerState<Menu> {
                             onChanged: (value) {
                               if (value.isNotEmpty) {
                                 List<List<dynamic>> newCategoryItems = [];
-            
+
                                 for (int i = 0; i < categories.length; i++) {
                                   List<dynamic> filteredItems =
                                       categoryItems[i].where((element) {
@@ -198,10 +200,10 @@ class _MenuState extends ConsumerState<Menu> {
                                             .toLowerCase()
                                             .contains(value.toLowerCase());
                                       }).toList();
-            
+
                                   newCategoryItems.add(filteredItems);
                                 }
-            
+
                                 setState(() {
                                   categoryItems = newCategoryItems;
                                 });
@@ -270,11 +272,11 @@ class _MenuState extends ConsumerState<Menu> {
                                     if (index >= categoryItems.length) {
                                       return SizedBox();
                                     }
-            
+
                                     if (categoryItems[index].length == 0) {
                                       return SizedBox();
                                     }
-            
+
                                     return Padding(
                                       padding: EdgeInsets.only(bottom: 10),
                                       child: Category(

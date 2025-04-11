@@ -59,6 +59,7 @@ SliverWoltModalSheetPage otp(
         if (!context.mounted) return;
 
         prefs.setString('token', jsonRes['token']);
+        prefs.setString('phone', phoneNumber);
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => Menu()),
