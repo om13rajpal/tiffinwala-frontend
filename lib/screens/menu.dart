@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart' as lucide;
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/constants/url.dart';
 import 'package:tiffinwala/providers/cart.dart';
@@ -110,9 +111,43 @@ class _MenuState extends ConsumerState<Menu> {
     }
   }
 
-  void _handlePaymentSuccess(PaymentSuccessResponse response) {
-    // Handle successful payment
+  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
     log("Payment Successful: ${response.paymentId}");
+
+    List<dynamic> orders = [];
+    List<CartItems> cartItems = ref.watch(cartProvider);
+    for (var item in cartItems) {
+      var order = {
+        'itemName': item.item['itemName'],
+        'price': item.totalPrice,
+        'quantity': item.quantity,
+      };
+
+      orders.add(order);
+    }
+
+    double totalPrice = ref.read(cartProvider.notifier).getTotalPrice();
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String phone = prefs.getString('phone')!;
+
+    var body = {'order': orders, 'price': totalPrice, 'phone': phone};
+    var res = await http.post(
+      Uri.parse('${BaseUrl.url}/order/new'),
+      body: jsonEncode(body),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    var jsonRes = jsonDecode(res.body);
+
+    if (jsonRes['status']) {
+      ref.read(cartProvider.notifier).clearCart();
+      if (!mounted) return;
+      Navigator.of(context).pop();
+      setState(() {
+        getMenu();
+      });
+    }
   }
 
   void _handlePaymentError(PaymentFailureResponse response) {
