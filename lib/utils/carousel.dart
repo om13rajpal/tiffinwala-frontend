@@ -58,15 +58,15 @@ class _PosterCarouselState extends State<PosterCarousel> {
                     child: const Icon(Icons.arrow_back),
                   ),
                   gap(10),
-                  const SizedBox(
-                    width: 230,
+                  SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.6,
                     child: OverflowMarquee(
                       duration: Duration(seconds: 4),
                       fadePortion: 20,
                       child: Text(
                         'No more boring meals – try our homestyle tiffin today & get 20% off your first order! Get your first tiffin at just ₹49 – homemade taste, delivered fresh to your doorstep!',
                         style: TextStyle(
-                          fontSize: 11,
+                          fontSize: 10,
                           fontWeight: FontWeight.w400,
                           color: Color(0xFF888888),
                         ),

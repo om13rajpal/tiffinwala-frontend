@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart' as lucide_flutter;
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tiffinwala/constants/url.dart';
+import 'package:tiffinwala/providers/loading.dart';
 import 'package:tiffinwala/screens/menu.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/modal%20pages/userdetails.dart';
@@ -17,6 +19,7 @@ SliverWoltModalSheetPage otp(
   BuildContext context,
   TextTheme textTheme,
   String phoneNumber,
+  WidgetRef ref,
 ) {
   String otpData = '';
   void handleOtp(String otp) {
@@ -24,6 +27,7 @@ SliverWoltModalSheetPage otp(
   }
 
   Future<void> verifyOtp() async {
+    ref.read(isLoadingProvider.notifier).setLoading(true);
     var body = {'phoneNumber': '+91$phoneNumber', 'otp': otpData};
 
     var response = await http.post(
@@ -55,6 +59,7 @@ SliverWoltModalSheetPage otp(
           builder: buildToast,
           location: ToastLocation.topCenter,
         );
+        ref.read(isLoadingProvider.notifier).setLoading(false);
         await Future.delayed(const Duration(milliseconds: 1500));
         if (!context.mounted) return;
 

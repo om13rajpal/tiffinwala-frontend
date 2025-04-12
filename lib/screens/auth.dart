@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tiffinwala/utils/modal%20pages/phone.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
-class Auth extends StatefulWidget {
+class Auth extends ConsumerStatefulWidget {
   const Auth({super.key});
 
   @override
-  State<Auth> createState() => _AuthState();
+  ConsumerState<Auth> createState() => _AuthState();
 }
 
-class _AuthState extends State<Auth> {
+class _AuthState extends ConsumerState<Auth> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -24,9 +25,7 @@ class _AuthState extends State<Auth> {
                   context: context,
                   pageListBuilder: (context) {
                     final textTheme = Theme.of(context).textTheme;
-                    return [
-                      phone(context, textTheme),
-                    ];
+                    return [phone(context, textTheme, ref)];
                   },
                 );
               },

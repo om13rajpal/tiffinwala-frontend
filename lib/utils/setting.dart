@@ -4,14 +4,35 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 class Setting extends StatelessWidget {
   final int index;
   final String label;
-  const Setting({super.key, required this.index, required this.label});
+  final VoidCallback onPressed;
+  final IconData icon;
+  final Color bgcolor;
+  const Setting({
+    super.key,
+    required this.index,
+    required this.label,
+    required this.onPressed,
+    required this.icon, required this.bgcolor,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        SizedBox(width: 40),
+        Padding(
+          padding: const EdgeInsets.only(left: 15),
+          child: Container(
+            padding: EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              color: bgcolor,
+              borderRadius: BorderRadius.circular(5),
+            ),
+            child: LucideIconWidget(icon: icon, size: 14,),
+          ),
+        ),
+        SizedBox(width: 20),
         Expanded(
           child: Container(
             height: 40,
@@ -29,12 +50,12 @@ class Setting extends StatelessWidget {
                   label,
                   style: TextStyle(
                     fontSize: 12,
-                    fontWeight: FontWeight.w400,
+                    fontWeight: FontWeight.w500,
                     color: Color(0xFFE2E2E2),
                   ),
                 ),
                 IconButton(
-                  onPressed: () {},
+                  onPressed: onPressed,
                   icon: LucideIconWidget(
                     icon: LucideIcons.chevronRight,
                     size: 13,

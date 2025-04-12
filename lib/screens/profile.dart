@@ -1,8 +1,10 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tiffinwala/constants/url.dart';
+import 'package:tiffinwala/screens/auth.dart';
 import 'package:tiffinwala/utils/appbar.dart';
 import 'package:tiffinwala/utils/details.dart';
 import 'package:tiffinwala/utils/setting.dart';
@@ -17,14 +19,36 @@ class Profile extends StatefulWidget {
   State<Profile> createState() => _ProfileState();
 }
 
-int loyaltyPoints = 0;
-List<dynamic> pastOrders = [];
+List<String> _settings = [
+  'Personal Details',
+  'Address',
+  'Past orders',
+  'Log out',
+];
+
+Set<IconData> _settingIcons = {
+  LucideIcons.user,
+  LucideIcons.mapPin,
+  LucideIcons.box,
+  LucideIcons.logOut,
+};
+
+List<Color> _bgColors = [
+  Color.fromARGB(255, 255, 192, 33),
+  Color.fromARGB(255, 0, 204, 255),
+  Color.fromARGB(255, 255, 145, 0),
+  Color.fromARGB(255, 153, 153, 153),
+];
 
 class _ProfileState extends State<Profile> {
+  late int loyaltyPoints = 0;
+  late String phoneNumber = "";
+  late List<dynamic> pastOrders = [];
+
   Future<void> getLoyaltyPoints() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     var phone = prefs.getString('phone');
-
+    phoneNumber = phone!;
     var response = await http.get(
       Uri.parse('${BaseUrl.url}/user/loyalty/$phone'),
       headers: {'Content-Type': "application/json"},
@@ -33,9 +57,7 @@ class _ProfileState extends State<Profile> {
     var jsonRes = jsonDecode(response.body);
     if (jsonRes['status']) {
       loyaltyPoints = jsonRes['data'];
-      setState(() {
-        
-      });
+      setState(() {});
     }
   }
 
@@ -62,8 +84,21 @@ class _ProfileState extends State<Profile> {
     super.initState();
   }
 
+  Future<void> logout(BuildContext context) async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.remove('token');
+    if (!context.mounted) return;
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => Auth()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    List<String> details = [phoneNumber, 'Loyalty Points'];
+
+    List<String> detailsValue = ['Joined 1 day ago', loyaltyPoints.toString()];
     return Scaffold(
       body: SafeArea(
         child: ScrollConfiguration(
@@ -92,7 +127,7 @@ class _ProfileState extends State<Profile> {
                   ),
                 ),
               ),
-              SliverToBoxAdapter(child: SizedBox(height: 30)),
+              SliverToBoxAdapter(child: SizedBox(height: 40)),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -116,15 +151,15 @@ class _ProfileState extends State<Profile> {
                   child: Column(
                     children: List.generate(2, (index) {
                       return Details(
-                        title: 'Loyalty Points',
-                        detail: loyaltyPoints.toString(),
-                        badge: 'Beginner',
+                        title: details[index],
+                        detail: detailsValue[index],
+                        badge: 'Verified',
                       );
                     }),
                   ),
                 ),
               ),
-              SliverToBoxAdapter(child: SizedBox(height: 25)),
+              SliverToBoxAdapter(child: SizedBox(height: 30)),
               SliverToBoxAdapter(
                 child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -149,7 +184,13 @@ class _ProfileState extends State<Profile> {
                   ),
                   child: Column(
                     children: List.generate(4, (index) {
-                      return Setting(index: index, label: 'Edit profile');
+                      return Setting(
+                        index: index,
+                        label: _settings[index],
+                        onPressed: () => logout(context),
+                        icon: _settingIcons.elementAt(index),
+                        bgcolor: _bgColors[index],
+                      );
                     }),
                   ),
                 ),

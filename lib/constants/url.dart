@@ -1,3 +1,3 @@
 class BaseUrl {
-  static const String url = "http://localhost:3000";
+  static const String url = "https://tiffin-sn6p7.ondigitalocean.app";
 }
