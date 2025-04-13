@@ -216,59 +216,103 @@ class _MenuState extends ConsumerState<Menu> {
                         child: Container(
                           height: 35,
                           padding: const EdgeInsets.symmetric(horizontal: 10),
-                          child: material.TextField(
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: AppColors.secondary,
-                            ),
-                            controller: searchController,
-                            onChanged: (value) {
-                              if (value.isNotEmpty) {
-                                List<List<dynamic>> newCategoryItems = [];
+                          child: material.Row(
+                            spacing: 4,
+                            children: [
+                              Expanded(
+                                child: material.TextField(
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.secondary,
+                                  ),
+                                  controller: searchController,
+                                  onChanged: (value) {
+                                    if (value.isNotEmpty) {
+                                      List<List<dynamic>> newCategoryItems = [];
 
-                                for (int i = 0; i < categories.length; i++) {
-                                  List<dynamic> filteredItems =
-                                      categoryItems[i].where((element) {
-                                        return element['item']['itemName']
-                                            .toString()
-                                            .toLowerCase()
-                                            .contains(value.toLowerCase());
-                                      }).toList();
+                                      for (
+                                        int i = 0;
+                                        i < categories.length;
+                                        i++
+                                      ) {
+                                        List<dynamic> filteredItems =
+                                            categoryItems[i].where((element) {
+                                              return element['item']['itemName']
+                                                  .toString()
+                                                  .toLowerCase()
+                                                  .contains(
+                                                    value.toLowerCase(),
+                                                  );
+                                            }).toList();
 
-                                  newCategoryItems.add(filteredItems);
-                                }
+                                        newCategoryItems.add(filteredItems);
+                                      }
 
-                                setState(() {
-                                  categoryItems = newCategoryItems;
-                                });
-                              } else {
-                                optionSetItemWise.clear();
-                                menu.clear();
-                                categoryItems.clear();
-                                getMenu();
-                              }
-                            },
-                            cursorOpacityAnimates: true,
-                            decoration: material.InputDecoration(
-                              contentPadding: EdgeInsets.only(top: 9),
-                              hintText: 'Search for items',
-                              hintStyle: TextStyle(
-                                fontSize: 13,
-                                fontWeight: FontWeight.w400,
-                                color: AppColors.secondary.withAlpha(100),
+                                      setState(() {
+                                        categoryItems = newCategoryItems;
+                                      });
+                                    } else {
+                                      optionSetItemWise.clear();
+                                      menu.clear();
+                                      categoryItems.clear();
+                                      getMenu();
+                                    }
+                                  },
+                                  cursorOpacityAnimates: true,
+                                  decoration: material.InputDecoration(
+                                    contentPadding: EdgeInsets.only(top: 9),
+                                    hintText: 'Search for items',
+                                    hintStyle: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w400,
+                                      color: AppColors.secondary.withAlpha(100),
+                                    ),
+                                    filled: true,
+                                    fillColor: AppColors.accent,
+                                    border: material.OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                      borderSide: BorderSide.none,
+                                    ),
+                                    prefixIcon: Icon(
+                                      lucide.LucideIcons.search,
+                                      size: 16,
+                                    ),
+                                  ),
+                                ),
                               ),
-                              filled: true,
-                              fillColor: AppColors.accent,
-                              border: material.OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                                borderSide: BorderSide.none,
+                              Container(
+                                width: 80,
+                                height: 35,
+                                decoration: BoxDecoration(
+                                  color: AppColors.accent,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Row(
+                                  spacing: 5,
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Menu',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w400,
+                                        color: AppColors.secondary.withAlpha(
+                                          200,
+                                        ),
+                                      ),
+                                    ),
+                                    lucide.LucideIconWidget(
+                                      icon: lucide.LucideIcons.utensils,
+                                      size: 13,
+                                      color: AppColors.secondary.withAlpha(200),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              prefixIcon: Icon(
-                                lucide.LucideIcons.search,
-                                size: 16,
-                              ),
-                            ),
+                            ],
                           ),
                         ),
                       ),

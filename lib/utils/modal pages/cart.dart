@@ -26,16 +26,18 @@ SliverWoltModalSheetPage cart(
     stickyActionBar: Container(
       padding: const EdgeInsets.symmetric(horizontal: 30),
       width: MediaQuery.of(context).size.width,
-      height: 60,
+      height: 100,
       child: Paynow(openCheckout),
     ),
     forceMaxHeight: false,
-    child: Container(
-      padding: EdgeInsets.symmetric(horizontal: 30),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: 15,
-        children: [CartItem(), SizedBox(height: 50)],
+    child: Center(
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 30),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 15,
+          children: [CartItem(), SizedBox(height: 85)],
+        ),
       ),
     ),
   );

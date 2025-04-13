@@ -57,7 +57,6 @@ class _ProfileState extends State<Profile> {
     var jsonRes = jsonDecode(response.body);
     if (jsonRes['status']) {
       loyaltyPoints = jsonRes['data'];
-      setState(() {});
     }
   }
 
@@ -317,9 +316,4 @@ Future<dynamic> editAddress(material.BuildContext context) {
       );
     },
   );
-}
-
-
-Future<void> getPastOrders() async {
-
 }
