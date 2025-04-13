@@ -1,5 +1,6 @@
-import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:flutter/material.dart' as material;
+import 'package:lucide_icons_flutter/lucide_icons.dart' as lucide;
+import 'package:shadcn_flutter/shadcn_flutter.dart';
 
 class Setting extends StatelessWidget {
   final int index;
@@ -12,7 +13,8 @@ class Setting extends StatelessWidget {
     required this.index,
     required this.label,
     required this.onPressed,
-    required this.icon, required this.bgcolor,
+    required this.icon,
+    required this.bgcolor,
   });
 
   @override
@@ -29,7 +31,7 @@ class Setting extends StatelessWidget {
               color: bgcolor,
               borderRadius: BorderRadius.circular(5),
             ),
-            child: LucideIconWidget(icon: icon, size: 14,),
+            child: lucide.LucideIconWidget(icon: icon, size: 14),
           ),
         ),
         SizedBox(width: 20),
@@ -54,9 +56,9 @@ class Setting extends StatelessWidget {
                     color: Color(0xFFE2E2E2),
                   ),
                 ),
-                IconButton(
+                material.IconButton(
                   onPressed: onPressed,
-                  icon: LucideIconWidget(
+                  icon: lucide.LucideIconWidget(
                     icon: LucideIcons.chevronRight,
                     size: 13,
                   ),

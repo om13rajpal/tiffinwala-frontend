@@ -1,7 +1,7 @@
 import 'dart:convert';
 
-import 'package:flutter/material.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:flutter/material.dart' as material;
+import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tiffinwala/constants/url.dart';
 import 'package:tiffinwala/screens/auth.dart';
@@ -98,8 +98,15 @@ class _ProfileState extends State<Profile> {
   Widget build(BuildContext context) {
     List<String> details = [phoneNumber, 'Loyalty Points'];
 
+    List<VoidCallback> settingFunctions = [
+      () => editPersonalDetails(context),
+      () => editAddress(context),
+      () => getPastOrders(),
+      () => logout(context),
+    ];
+
     List<String> detailsValue = ['Joined 1 day ago', loyaltyPoints.toString()];
-    return Scaffold(
+    return material.Scaffold(
       body: SafeArea(
         child: ScrollConfiguration(
           behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
@@ -187,7 +194,7 @@ class _ProfileState extends State<Profile> {
                       return Setting(
                         index: index,
                         label: _settings[index],
-                        onPressed: () => logout(context),
+                        onPressed: settingFunctions[index],
                         icon: _settingIcons.elementAt(index),
                         bgcolor: _bgColors[index],
                       );
@@ -201,4 +208,118 @@ class _ProfileState extends State<Profile> {
       ),
     );
   }
+}
+
+Future<dynamic> editPersonalDetails(material.BuildContext context) {
+  return showDialog(
+    context: context,
+    builder: (context) {
+      final FormController controller = FormController();
+      return AlertDialog(
+        title: const Text(
+          'Edit personal details',
+          style: TextStyle(fontSize: 14),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Make changes to your personal details here. Click save when you\'re done',
+              style: TextStyle(fontSize: 11.5),
+            ),
+            const Gap(16),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Form(
+                controller: controller,
+                child: const FormTableLayout(
+                  rows: [
+                    FormField<String>(
+                      key: FormKey(#name),
+                      label: Text('Name', style: TextStyle(fontSize: 12)),
+                      child: TextField(
+                        initialValue: 'John Doe',
+                        style: TextStyle(fontSize: 11),
+                      ),
+                    ),
+                    FormField<String>(
+                      key: FormKey(#username),
+                      label: Text('Email', style: TextStyle(fontSize: 12)),
+                      child: TextField(
+                        initialValue: 'johndoe@gmail.com',
+                        style: TextStyle(fontSize: 11),
+                      ),
+                    ),
+                  ],
+                ),
+              ).withPadding(vertical: 16),
+            ),
+          ],
+        ),
+        actions: [
+          PrimaryButton(
+            child: const Text('Save changes'),
+            onPressed: () {
+              Navigator.of(context).pop(controller.values);
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
+Future<dynamic> editAddress(material.BuildContext context) {
+  return showDialog(
+    context: context,
+    builder: (context) {
+      final FormController controller = FormController();
+      return AlertDialog(
+        title: const Text('Edit your address', style: TextStyle(fontSize: 14)),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Make changes to your address here. Click save when you\'re done',
+              style: TextStyle(fontSize: 11.5),
+            ),
+            const Gap(16),
+            ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 400),
+              child: Form(
+                controller: controller,
+                child: const FormTableLayout(
+                  rows: [
+                    FormField<String>(
+                      key: FormKey(#address),
+                      label: Text('Address', style: TextStyle(fontSize: 12)),
+                      child: TextField(
+                        initialValue: 'Street xyz, Ottawa, Canada',
+                        style: TextStyle(fontSize: 11),
+                      ),
+                    ),
+                  ],
+                ),
+              ).withPadding(vertical: 16),
+            ),
+          ],
+        ),
+        actions: [
+          PrimaryButton(
+            child: const Text('Save changes'),
+            onPressed: () {
+              Navigator.of(context).pop(controller.values);
+            },
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
+Future<void> getPastOrders() async {
+
 }
