@@ -44,6 +44,9 @@ class _ProfileState extends State<Profile> {
   late int loyaltyPoints = 0;
   late String phoneNumber = "";
   late List<dynamic> pastOrders = [];
+  late String firstName = "";
+  late String lastName = "";
+  late String address = "";
 
   Future<void> getLoyaltyPoints() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -76,10 +79,35 @@ class _ProfileState extends State<Profile> {
     }
   }
 
+  Future<void> getUserData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    var phone = prefs.getString('phone');
+    var token = prefs.getString('token');
+
+    var res = await http.get(
+      Uri.parse('${BaseUrl.url}/user/$phone'),
+      headers: {
+        'Content-Type': 'application/json',
+        'authorization': 'Bearer $token',
+      },
+    );
+
+    var jsonRes = jsonDecode(res.body);
+    if (jsonRes['status']) {
+      firstName = jsonRes['data']['firstName'];
+      lastName = jsonRes['data']['lastName'];
+      address = jsonRes['data']['address'];
+      setState(() {});
+    } else {
+      print('Failed to fetch user data: ${jsonRes['message']}');
+    }
+  }
+
   @override
   void initState() {
     getLoyaltyPoints();
     getPastOrders();
+    getUserData();
     super.initState();
   }
 
@@ -121,7 +149,7 @@ class _ProfileState extends State<Profile> {
                     children: [
                       VerifiedBadge(),
                       Text(
-                        'Om Rajpal',
+                        "$firstName $lastName",
                         style: TextStyle(
                           fontSize: 26,
                           fontWeight: FontWeight.w600,
@@ -235,18 +263,18 @@ Future<dynamic> editPersonalDetails(material.BuildContext context) {
                 child: const FormTableLayout(
                   rows: [
                     FormField<String>(
-                      key: FormKey(#name),
-                      label: Text('Name', style: TextStyle(fontSize: 12)),
+                      key: FormKey(#firstName),
+                      label: Text('First Name', style: TextStyle(fontSize: 12)),
                       child: TextField(
-                        initialValue: 'John Doe',
+                        initialValue: 'John',
                         style: TextStyle(fontSize: 11),
                       ),
                     ),
                     FormField<String>(
-                      key: FormKey(#username),
-                      label: Text('Email', style: TextStyle(fontSize: 12)),
+                      key: FormKey(#lastName),
+                      label: Text('Last Name', style: TextStyle(fontSize: 12)),
                       child: TextField(
-                        initialValue: 'johndoe@gmail.com',
+                        initialValue: 'Doe',
                         style: TextStyle(fontSize: 11),
                       ),
                     ),
@@ -259,8 +287,51 @@ Future<dynamic> editPersonalDetails(material.BuildContext context) {
         actions: [
           PrimaryButton(
             child: const Text('Save changes'),
-            onPressed: () {
-              Navigator.of(context).pop(controller.values);
+            onPressed: () async {
+              List<String> valueList = [];
+              final values = controller.values.map((key, value) {
+                valueList.add(value);
+                return MapEntry(key, value);
+              });
+
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              var phone = prefs.getString('phone');
+              var token = prefs.getString('token');
+
+              var body = {'firstName': valueList[0], 'lastName': valueList[1]};
+
+              var res = await http.put(
+                Uri.parse('${BaseUrl.url}/user/name/$phone'),
+                body: jsonEncode(body), // pass the updated map
+                headers: {
+                  'Content-Type': 'application/json',
+                  'authorization': 'Bearer $token',
+                },
+              );
+
+              var jsonRes = jsonDecode(res.body);
+
+              if (!context.mounted) return;
+
+              if (jsonRes['status']) {
+                Navigator.of(context).pop(values);
+              } else {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: const Text('Error'),
+                      content: const Text('Failed to update personal details.'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('OK'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              }
             },
           ),
         ],
@@ -308,8 +379,47 @@ Future<dynamic> editAddress(material.BuildContext context) {
         actions: [
           PrimaryButton(
             child: const Text('Save changes'),
-            onPressed: () {
-              Navigator.of(context).pop(controller.values);
+            onPressed: () async {
+              var address = "";
+              var values = controller.values.map((key, value) {
+                address = value;
+                return MapEntry(key, value);
+              });
+              SharedPreferences prefs = await SharedPreferences.getInstance();
+              var phone = prefs.getString('phone');
+              var token = prefs.getString('token');
+
+              var body = {'address': address};
+              var res = await http.put(
+                Uri.parse('${BaseUrl.url}/user/address/$phone'),
+                headers: {
+                  'Content-Type': 'application/json',
+                  'authorization': 'Bearer $token',
+                },
+                body: jsonEncode(body),
+              );
+
+              var jsonRes = jsonDecode(res.body);
+              if (!context.mounted) return;
+              if (jsonRes['status']) {
+                Navigator.of(context).pop(values);
+              } else {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      title: const Text('Error'),
+                      content: const Text('Failed to update address.'),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          child: const Text('OK'),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              }
             },
           ),
         ],

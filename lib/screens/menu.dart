@@ -6,6 +6,7 @@ import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart' as lucide;
 import 'package:razorpay_flutter/razorpay_flutter.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tiffinwala/constants/colors.dart';
@@ -37,10 +38,13 @@ List<dynamic> optionSetItemWise = [];
 
 List<dynamic> menu = [];
 
+List<GlobalKey> categoryKeys = [];
+
 TextEditingController searchController = TextEditingController();
 
 class _MenuState extends ConsumerState<Menu> {
   late Razorpay _razorpay;
+  final ItemScrollController _scrollController = ItemScrollController();
 
   Future<void> getMenu() async {
     var response = await http.get(
@@ -85,6 +89,8 @@ class _MenuState extends ConsumerState<Menu> {
       }
       categories = categories.reversed.toList();
       categoryItems = categoryItems.reversed.toList();
+
+      categoryKeys = List.generate(categories.length, (index) => GlobalKey());
 
       setState(() {});
     } else {
@@ -170,6 +176,23 @@ class _MenuState extends ConsumerState<Menu> {
     _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
     super.initState();
   }
+
+  @override
+  void dispose() {
+    _razorpay.clear();
+    searchController.dispose();
+    super.dispose();
+  }
+
+void _scrollToCategory(int index) {
+  Navigator.of(context).pop();
+  _scrollController.scrollTo(
+    index: index,
+    duration: Duration(milliseconds: 600),
+    curve: Curves.easeInOut,
+  );
+}
+
 
   final GlobalKey<RefreshTriggerState> _refreshTriggerKey =
       GlobalKey<RefreshTriggerState>();
@@ -281,35 +304,55 @@ class _MenuState extends ConsumerState<Menu> {
                                   ),
                                 ),
                               ),
-                              Container(
-                                width: 80,
-                                height: 35,
-                                decoration: BoxDecoration(
-                                  color: AppColors.accent,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Row(
-                                  spacing: 5,
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.center,
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      'Menu',
-                                      style: TextStyle(
-                                        fontSize: 13,
-                                        fontWeight: FontWeight.w400,
+                              GestureDetector(
+                                onTap: () {
+                                  WoltModalSheet.show(
+                                    context: context,
+                                    modalTypeBuilder:
+                                        (context) => WoltModalType.dialog(),
+                                    pageListBuilder: (context) {
+                                      return [
+                                        menuPopUp(
+                                          context,
+                                          categories,
+                                          _scrollToCategory,
+                                        ),
+                                      ];
+                                    },
+                                  );
+                                },
+                                child: Container(
+                                  width: 80,
+                                  height: 35,
+                                  decoration: BoxDecoration(
+                                    color: AppColors.accent,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    spacing: 5,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        'Menu',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          fontWeight: FontWeight.w400,
+                                          color: AppColors.secondary.withAlpha(
+                                            200,
+                                          ),
+                                        ),
+                                      ),
+                                      lucide.LucideIconWidget(
+                                        icon: lucide.LucideIcons.utensils,
+                                        size: 13,
                                         color: AppColors.secondary.withAlpha(
                                           200,
                                         ),
                                       ),
-                                    ),
-                                    lucide.LucideIconWidget(
-                                      icon: lucide.LucideIcons.utensils,
-                                      size: 13,
-                                      color: AppColors.secondary.withAlpha(200),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
                                 ),
                               ),
                             ],
@@ -343,7 +386,8 @@ class _MenuState extends ConsumerState<Menu> {
                                 behavior: ScrollConfiguration.of(
                                   context,
                                 ).copyWith(scrollbars: false),
-                                child: ListView.builder(
+                                child: ScrollablePositionedList.builder(
+                                  itemScrollController: _scrollController,
                                   physics: BouncingScrollPhysics(),
                                   shrinkWrap: true,
                                   itemCount: categories.length,
@@ -358,9 +402,12 @@ class _MenuState extends ConsumerState<Menu> {
 
                                     return Padding(
                                       padding: EdgeInsets.only(bottom: 10),
-                                      child: Category(
-                                        title: categories[index]['name'],
-                                        items: categoryItems[index],
+                                      child: material.Container(
+                                        key: categoryKeys[index],
+                                        child: Category(
+                                          title: categories[index]['name'],
+                                          items: categoryItems[index],
+                                        ),
                                       ),
                                     );
                                   },
@@ -452,4 +499,48 @@ class _MenuState extends ConsumerState<Menu> {
       ),
     );
   }
+}
+
+WoltModalSheetPage menuPopUp(
+  BuildContext context,
+  List<dynamic> categories,
+  Function(int) scrollToCategory,
+) {
+  return WoltModalSheetPage(
+    hasTopBarLayer: true,
+    topBar: const Center(
+      child: Text(
+        'Menu',
+        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+      ),
+    ),
+    scrollController: ScrollController(),
+    isTopBarLayerAlwaysVisible: true,
+    useSafeArea: true,
+    child: Padding(
+      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+      child: Column(
+        children: List.generate(categories.length, (index) {
+          return GestureDetector(
+            onTap: () {
+              scrollToCategory(index);
+            },
+            child: Container(
+              padding: EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+              margin: EdgeInsets.only(bottom: 10),
+              width: MediaQuery.of(context).size.width * 0.7,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(8),
+                color: const material.Color.fromARGB(255, 37, 37, 37),
+              ),
+              child: Text(
+                categories[index]['name'],
+                style: TextStyle(fontSize: 10.5, fontWeight: FontWeight.w600),
+              ),
+            ),
+          );
+        }),
+      ),
+    ),
+  );
 }
