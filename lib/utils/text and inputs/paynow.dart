@@ -75,6 +75,7 @@ class _PaynowState extends ConsumerState<Paynow> {
                       borderSide: BorderSide.none,
                     ),
                     prefixIcon: Icon(LucideIcons.badgePercent, size: 16),
+                    suffixIcon: Icon(LucideIcons.chevronRight, size: 16),
                   ),
                 ),
               ),
@@ -91,7 +92,6 @@ class _PaynowState extends ConsumerState<Paynow> {
                       TiffinCheckbox(
                         preChecked: false,
                         onChanged: (isChecked) {
-                          print(isChecked);
                           handleCheckbox(isChecked);
                         },
                       ),
@@ -134,10 +134,33 @@ class _PaynowState extends ConsumerState<Paynow> {
               ],
             ),
             TiffinButton(
-              label: 'PAY NOW',
-              width: 70,
+              label: 'PAYMENT',
+              width: 75,
               height: 27,
-              onPressed: widget.openCheckout,
+              onPressed: () {
+                showDialog(
+                  context: context,
+                  builder: (context) {
+                    return AlertDialog(
+                      backgroundColor: AppColors.accent,
+                      content: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          GestureDetector(
+                            onTap: () => print("cash on delivery"),
+                            child: Text('Cash on Delivery', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),),
+                          ),
+                          GestureDetector(
+                            onTap: () => widget.openCheckout,
+                            child: Text('Pay Online', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                );
+              },
             ),
           ],
         ),
