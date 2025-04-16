@@ -39,12 +39,29 @@ List<dynamic> optionSetItemWise = [];
 List<dynamic> menu = [];
 
 List<GlobalKey> categoryKeys = [];
+int loyaltyPoints = 0;
 
 TextEditingController searchController = TextEditingController();
 
 class _MenuState extends ConsumerState<Menu> {
   late Razorpay _razorpay;
   final ItemScrollController _scrollController = ItemScrollController();
+
+  Future<void> getLoyaltyPoints() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    var phone = prefs.getString('phone');
+    var token = prefs.getString('token');
+
+    var response = await http.get(
+      Uri.parse('${BaseUrl.url}/user/loyalty/$phone'),
+      headers: {'Content-Type': "application/json", "authorization": "Bearer $token"},
+    );
+
+    var jsonRes = jsonDecode(response.body);
+    if (jsonRes['status']) {
+      loyaltyPoints = jsonRes['data'];
+    }
+  }
 
   Future<void> getMenu() async {
     var response = await http.get(
@@ -169,6 +186,7 @@ class _MenuState extends ConsumerState<Menu> {
   @override
   void initState() {
     getMenu();
+    getLoyaltyPoints();
     _razorpay = Razorpay();
 
     _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
@@ -184,15 +202,14 @@ class _MenuState extends ConsumerState<Menu> {
     super.dispose();
   }
 
-void _scrollToCategory(int index) {
-  Navigator.of(context).pop();
-  _scrollController.scrollTo(
-    index: index,
-    duration: Duration(milliseconds: 600),
-    curve: Curves.easeInOut,
-  );
-}
-
+  void _scrollToCategory(int index) {
+    Navigator.of(context).pop();
+    _scrollController.scrollTo(
+      index: index,
+      duration: Duration(milliseconds: 600),
+      curve: Curves.easeInOut,
+    );
+  }
 
   final GlobalKey<RefreshTriggerState> _refreshTriggerKey =
       GlobalKey<RefreshTriggerState>();
@@ -474,6 +491,7 @@ void _scrollToCategory(int index) {
                                         cart(
                                           context,
                                           () => _openCheckout(price),
+                                          loyaltyPoints,
                                         ),
                                       ];
                                     },

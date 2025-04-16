@@ -8,19 +8,40 @@ import 'package:tiffinwala/utils/buttons/checkbox.dart';
 
 class Paynow extends ConsumerStatefulWidget {
   final VoidCallback openCheckout;
-  const Paynow(this.openCheckout, {super.key});
+  final int loyaltyPoints;
+  const Paynow(this.openCheckout, this.loyaltyPoints, {super.key});
 
   @override
   ConsumerState<Paynow> createState() => _PaynowState();
 }
 
+double totalPrice = 0.0;
+double loyaltyPrice = 0.0;
+bool usingLoyaltyPoints = false;
+
 class _PaynowState extends ConsumerState<Paynow> {
+  void handleCheckbox(bool isChecked) {
+    setState(() {
+      usingLoyaltyPoints = isChecked;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     List<CartItems> cartItems = ref.watch(cartProvider);
-    double totalPrice = ref.watch(
+    totalPrice = ref.watch(
       cartProvider.notifier.select((cart) => cart.getTotalPrice()),
     );
+
+    loyaltyPrice =
+        ref.watch(
+          cartProvider.notifier.select((cart) => cart.getTotalPrice()),
+        ) -
+        widget.loyaltyPoints;
+
+    if (loyaltyPrice < 0) {
+      loyaltyPrice = 0;
+    }
 
     return Column(
       spacing: 10,
@@ -67,8 +88,17 @@ class _PaynowState extends ConsumerState<Paynow> {
                   offset: Offset(-7, 0),
                   child: Row(
                     children: [
-                      TiffinCheckbox(preChecked: false, onChanged: (p0) {}),
-                      Text('₹50 off', style: TextStyle(fontSize: 12)),
+                      TiffinCheckbox(
+                        preChecked: false,
+                        onChanged: (isChecked) {
+                          print(isChecked);
+                          handleCheckbox(isChecked);
+                        },
+                      ),
+                      Text(
+                        '₹${widget.loyaltyPoints} off',
+                        style: TextStyle(fontSize: 12),
+                      ),
                     ],
                   ),
                 ),
@@ -94,7 +124,7 @@ class _PaynowState extends ConsumerState<Paynow> {
                   ),
                 ),
                 Text(
-                  '₹ $totalPrice',
+                  (usingLoyaltyPoints) ? '₹ $loyaltyPrice' : '₹ $totalPrice',
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w500,

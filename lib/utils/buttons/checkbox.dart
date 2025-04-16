@@ -33,9 +33,7 @@ class _TiffinCheckboxState extends State<TiffinCheckbox> {
         setState(() {
           _state = value;
         });
-        widget.onChanged(
-          value == _state,
-        ); // Pass boolean to callback
+        widget.onChanged(_state == CheckboxState.checked ? true : false);
       },
     );
   }

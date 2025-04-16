@@ -7,6 +7,7 @@ import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 SliverWoltModalSheetPage cart(
   BuildContext context,
   VoidCallback openCheckout,
+  int loyaltyPoints,
 ) {
 
   return WoltModalSheetPage(
@@ -27,7 +28,7 @@ SliverWoltModalSheetPage cart(
       padding: const EdgeInsets.symmetric(horizontal: 30),
       width: MediaQuery.of(context).size.width,
       height: 100,
-      child: Paynow(openCheckout),
+      child: Paynow(openCheckout, loyaltyPoints),
     ),
     forceMaxHeight: false,
     child: Center(

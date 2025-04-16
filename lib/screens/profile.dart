@@ -51,10 +51,14 @@ class _ProfileState extends State<Profile> {
   Future<void> getLoyaltyPoints() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     var phone = prefs.getString('phone');
+    var token = prefs.getString('token');
     phoneNumber = phone!;
     var response = await http.get(
       Uri.parse('${BaseUrl.url}/user/loyalty/$phone'),
-      headers: {'Content-Type': "application/json"},
+      headers: {
+        'Content-Type': "application/json",
+        "authorization": "Bearer $token",
+      },
     );
 
     var jsonRes = jsonDecode(response.body);
@@ -66,10 +70,14 @@ class _ProfileState extends State<Profile> {
   Future<void> getPastOrders() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     var phone = prefs.getString('phone');
+    var token = prefs.getString('token');
 
     var response = await http.get(
       Uri.parse('${BaseUrl.url}/user/orders/$phone'),
-      headers: {'Content-Type': "application/json"},
+      headers: {
+        'Content-Type': "application/json",
+        "authorization": "Bearer $token",
+      },
     );
 
     var jsonRes = jsonDecode(response.body);
