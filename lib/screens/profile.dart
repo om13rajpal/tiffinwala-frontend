@@ -5,6 +5,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tiffinwala/constants/url.dart';
 import 'package:tiffinwala/screens/auth.dart';
+import 'package:tiffinwala/screens/orders.dart';
 import 'package:tiffinwala/utils/appbar.dart';
 import 'package:tiffinwala/utils/details.dart';
 import 'package:tiffinwala/utils/setting.dart';
@@ -136,7 +137,7 @@ class _ProfileState extends State<Profile> {
     List<VoidCallback> settingFunctions = [
       () => editPersonalDetails(context),
       () => editAddress(context),
-      () => getPastOrders(),
+      () => Navigator.push(context, MaterialPageRoute(builder: (context) => Orders(),)),
       () => logout(context),
     ];
 
@@ -164,7 +165,7 @@ class _ProfileState extends State<Profile> {
                         ),
                       ),
                       SizedBox(height: 4),
-                      Address(),
+                      Address(address: address,),
                     ],
                   ),
                 ),
