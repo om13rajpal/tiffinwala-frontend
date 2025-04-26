@@ -8,8 +8,9 @@ import 'package:tiffinwala/utils/buttons/checkbox.dart';
 
 class Paynow extends ConsumerStatefulWidget {
   final VoidCallback openCheckout;
+  final VoidCallback cod;
   final int loyaltyPoints;
-  const Paynow(this.openCheckout, this.loyaltyPoints, {super.key});
+  const Paynow(this.openCheckout, this.loyaltyPoints, this.cod, {super.key});
 
   @override
   ConsumerState<Paynow> createState() => _PaynowState();
@@ -148,12 +149,26 @@ class _PaynowState extends ConsumerState<Paynow> {
                         crossAxisAlignment: CrossAxisAlignment.center,
                         children: [
                           GestureDetector(
-                            onTap: () => print("cash on delivery"),
-                            child: Text('Cash on Delivery', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),),
+                            onTap: () {
+                              widget.cod();
+                            },
+                            child: Text(
+                              'Cash on Delivery',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                           GestureDetector(
                             onTap: () => widget.openCheckout,
-                            child: Text('Pay Online', style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),),
+                            child: Text(
+                              'Pay Online',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
                           ),
                         ],
                       ),

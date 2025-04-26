@@ -159,7 +159,13 @@ class _MenuState extends ConsumerState<Menu> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String phone = prefs.getString('phone')!;
 
-    var body = {'order': orders, 'price': totalPrice, 'phone': phone};
+    var body = {
+      'order': orders,
+      'price': totalPrice,
+      'phone': phone,
+      'paymentStatus': 'completed',
+      'paymentMethod': 'razorpay',
+    };
     var res = await http.post(
       Uri.parse('${BaseUrl.url}/order/new'),
       body: jsonEncode(body),
@@ -171,6 +177,50 @@ class _MenuState extends ConsumerState<Menu> {
     if (jsonRes['status']) {
       ref.read(cartProvider.notifier).clearCart();
       if (!mounted) return;
+      Navigator.of(context).pop();
+      setState(() {
+        getMenu();
+      });
+    }
+  }
+
+  void _handlePayOnDelivery() async {
+    List<dynamic> orders = [];
+    List<CartItems> cartItems = ref.watch(cartProvider);
+    for (var item in cartItems) {
+      var order = {
+        'itemName': item.item['itemName'],
+        'price': item.totalPrice,
+        'quantity': item.quantity,
+      };
+
+      orders.add(order);
+    }
+
+    double totalPrice = ref.read(cartProvider.notifier).getTotalPrice();
+
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String phone = prefs.getString('phone')!;
+
+    var body = {
+      'order': orders,
+      'price': totalPrice,
+      'phone': phone,
+      'paymentStatus': 'pending',
+      'paymentMethod': 'cod',
+    };
+    var res = await http.post(
+      Uri.parse('${BaseUrl.url}/order/new'),
+      body: jsonEncode(body),
+      headers: {'Content-Type': 'application/json'},
+    );
+
+    var jsonRes = jsonDecode(res.body);
+
+    if (jsonRes['status']) {
+      ref.read(cartProvider.notifier).clearCart();
+      if (!mounted) return;
+      Navigator.of(context).pop();
       Navigator.of(context).pop();
       setState(() {
         getMenu();
@@ -517,6 +567,7 @@ class _MenuState extends ConsumerState<Menu> {
                                       cart(
                                         context,
                                         () => _openCheckout(price),
+                                        () => _handlePayOnDelivery(),
                                         loyaltyPoints,
                                       ),
                                     ];

@@ -42,7 +42,7 @@ class Input extends StatelessWidget {
             keyboardType: TextInputType.text,
             stylusHandwritingEnabled: true,
             decoration: InputDecoration(
-              contentPadding: const EdgeInsets.only(top: 8),
+              contentPadding: (prefix) ? const EdgeInsets.only(top: 8): const EdgeInsets.only(top: 8, left: 8),
               enabledBorder: OutlineInputBorder(
                 borderSide: BorderSide(
                   color: const Color.fromARGB(255, 94, 94, 94),

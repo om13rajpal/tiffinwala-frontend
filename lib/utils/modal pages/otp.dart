@@ -70,11 +70,13 @@ SliverWoltModalSheetPage otp(
           MaterialPageRoute(builder: (context) => Menu()),
         );
       } else {
+        ref.read(isLoadingProvider.notifier).setLoading(false);
         WoltModalSheet.of(
           context,
-        ).pushPage(userDetails(context, textTheme, phoneNumber));
+        ).pushPage(userDetails(context, textTheme, phoneNumber, ref));
       }
     } else {
+      ref.read(isLoadingProvider.notifier).setLoading(false);
       log('otp not verified');
     }
   }

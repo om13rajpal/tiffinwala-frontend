@@ -2,9 +2,11 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tiffinwala/constants/url.dart';
+import 'package:tiffinwala/providers/loading.dart';
 import 'package:tiffinwala/screens/menu.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/input.dart';
@@ -15,16 +17,20 @@ SliverWoltModalSheetPage userDetails(
   BuildContext context,
   TextTheme textTheme,
   String phoneNumber,
+  WidgetRef ref,
 ) {
   TextEditingController firstNameController = TextEditingController();
   TextEditingController lastNameController = TextEditingController();
   TextEditingController addressController = TextEditingController();
 
   Future<void> registerUser() async {
+    ref.read(isLoadingProvider.notifier).setLoading(true);
+
     var body = {
       'firstName': firstNameController.text.trim(),
       'lastName': lastNameController.text.trim(),
       'phoneNumber': phoneNumber,
+      'address': addressController.text.trim(),
     };
 
     var response = await http.post(
@@ -39,6 +45,8 @@ SliverWoltModalSheetPage userDetails(
     if (!context.mounted) return;
 
     if (jsonRes['status']) {
+      ref.read(isLoadingProvider.notifier).setLoading(false);
+
       prefs.setString('token', jsonRes['token']);
       prefs.setString('phone', phoneNumber);
       Navigator.pushReplacement(
@@ -46,6 +54,8 @@ SliverWoltModalSheetPage userDetails(
         MaterialPageRoute(builder: (context) => Menu()),
       );
     } else {
+      ref.read(isLoadingProvider.notifier).setLoading(false);
+
       log('user not registered');
     }
   }

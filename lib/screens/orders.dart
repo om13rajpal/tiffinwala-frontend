@@ -42,58 +42,58 @@ class _OrdersState extends State<Orders> {
   void initState() {
     getPastOrders();
     super.initState();
+    _fetchAndUpdate(); 
+  }
+
+  Future<void> _fetchAndUpdate() async {
+    await getPastOrders();
+    setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: ScrollConfiguration(
-        behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-        child: CustomScrollView(
-          slivers: [
-            TiffinAppBar(centerTitle: true, title: 'Past Orders'),
-            SliverToBoxAdapter(
-              child: Column(
-                children: List.generate(pastOrders.length, (index) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      border: DashedBorder.fromBorderSide(
-                        side: const BorderSide(color: Colors.black, width: 0.2),
-                        dashLength: 2.5,
-                        spaceLength: 2.5,
-                      ),
-                    ),
-                    child: Column(children: [
-                        Text(
-                          index.toString(),
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
+    return Scaffold(
+      body: SafeArea(
+        child: ScrollConfiguration(
+          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
+          child: CustomScrollView(
+            slivers: [
+              TiffinAppBar(centerTitle: true, title: 'Past Orders'),
+              SliverToBoxAdapter(
+                child: Column(
+                  children: List.generate(pastOrders.length, (index) {
+                    return Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(14),
+                        border: DashedBorder.fromBorderSide(
+                          side: const BorderSide(color: Colors.black, width: 0.2),
+                          dashLength: 2.5,
+                          spaceLength: 2.5,
                         ),
-                        Text(
-                          pastOrders[index]['order'][0]['itemName'],
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w400,
-                          ),
-                        ),
-                        Text(
-                          '₹${pastOrders[index]['quantity']}',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                          ),
-            
                       ),
-                      ],
-                    ),
-                  );
-                }),
+                      child: Column(
+                        children: List.generate(
+                          pastOrders[index]['order'].length,
+                          (i) {
+                            return ListTile(
+                              title: 
+                                Text(pastOrders[index]['order'][i]['itemName']),
+                              subtitle: Text(
+                                'Quantity: ${pastOrders[index]['order'][i]['quantity']}'
+                              ),
+                              trailing: Text(
+                                '₹${pastOrders[index]['order'][i]['price']}'
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    );
+                  }),
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

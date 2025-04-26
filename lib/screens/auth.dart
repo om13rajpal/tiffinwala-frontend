@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tiffinwala/providers/loading.dart';
 import 'package:tiffinwala/utils/modal%20pages/phone.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
@@ -21,6 +22,7 @@ class _AuthState extends ConsumerState<Auth> {
           child: Center(
             child: ElevatedButton(
               onPressed: () {
+                ref.read(isLoadingProvider.notifier).setLoading(false);
                 WoltModalSheet.show(
                   context: context,
                   pageListBuilder: (context) {
