@@ -11,7 +11,10 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/constants/url.dart';
+import 'package:tiffinwala/providers/address.dart';
 import 'package:tiffinwala/providers/cart.dart';
+import 'package:tiffinwala/providers/loyalty.dart';
+import 'package:tiffinwala/providers/points.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/category.dart';
 import 'package:tiffinwala/utils/modal%20pages/cart.dart';
@@ -49,7 +52,7 @@ class _MenuState extends ConsumerState<Menu> {
   final ScrollController _outerController = ScrollController();
   late String address = '';
 
-  Future<void> getLoyaltyPoints() async {
+  Future<void> getLoyaltyPoints(WidgetRef ref) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     var phone = prefs.getString('phone');
     var token = prefs.getString('token');
@@ -65,6 +68,7 @@ class _MenuState extends ConsumerState<Menu> {
     var jsonRes = jsonDecode(response.body);
     if (jsonRes['status']) {
       loyaltyPoints = jsonRes['data'];
+      ref.read(setPointsProvider.notifier).setPoints(loyaltyPoints);
     }
   }
 
@@ -159,6 +163,28 @@ class _MenuState extends ConsumerState<Menu> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String phone = prefs.getString('phone')!;
 
+    bool usingLoyaltyPoints = ref.watch(isUsingLoyaltyProvider);
+
+    if (usingLoyaltyPoints) {
+      var body = {'phone': phone, 'points': -loyaltyPoints};
+
+      var res = await http.post(
+        Uri.parse('${BaseUrl.url}/user/loyalty'),
+        body: jsonEncode(body),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      var jsonRes = jsonDecode(res.body);
+
+      if (jsonRes['status']) {
+        ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
+        log('Loyalty points used successfully');
+      } else {
+        ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
+        log('Failed to use loyalty points: ${jsonRes['message']}');
+      }
+    }
+
     var body = {
       'order': orders,
       'price': totalPrice,
@@ -202,6 +228,28 @@ class _MenuState extends ConsumerState<Menu> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String phone = prefs.getString('phone')!;
 
+    bool usingLoyaltyPoints = ref.watch(isUsingLoyaltyProvider);
+
+    if (usingLoyaltyPoints) {
+      var body = {'phone': phone, 'points': -loyaltyPoints};
+
+      var res = await http.post(
+        Uri.parse('${BaseUrl.url}/user/loyalty'),
+        body: jsonEncode(body),
+        headers: {'Content-Type': 'application/json'},
+      );
+
+      var jsonRes = jsonDecode(res.body);
+
+      if (jsonRes['status']) {
+        ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
+        log('Loyalty points used successfully');
+      } else {
+        ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
+        log('Failed to use loyalty points: ${jsonRes['message']}');
+      }
+    }
+
     var body = {
       'order': orders,
       'price': totalPrice,
@@ -238,7 +286,7 @@ class _MenuState extends ConsumerState<Menu> {
     log("External Wallet Selected: ${response.walletName}");
   }
 
-  Future<void> getUserData() async {
+  Future<void> getUserData(WidgetRef ref) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     var phone = prefs.getString('phone');
     var token = prefs.getString('token');
@@ -254,7 +302,7 @@ class _MenuState extends ConsumerState<Menu> {
     var jsonRes = jsonDecode(res.body);
     if (jsonRes['status']) {
       address = jsonRes['data']['address'];
-      setState(() {});
+      ref.read(setAddressProvider.notifier).setAddress(address);
     } else {
       print('Failed to fetch user data: ${jsonRes['message']}');
     }
@@ -263,8 +311,8 @@ class _MenuState extends ConsumerState<Menu> {
   @override
   void initState() {
     getMenu();
-    getUserData();
-    getLoyaltyPoints();
+    getUserData(ref);
+    getLoyaltyPoints(ref);
     _razorpay = Razorpay();
 
     _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
@@ -303,6 +351,8 @@ class _MenuState extends ConsumerState<Menu> {
   @override
   Widget build(BuildContext context) {
     List<CartItems> cartItems = ref.watch(cartProvider);
+    address = ref.watch(setAddressProvider);
+    loyaltyPoints = ref.watch(setPointsProvider);
     double price = ref.watch(
       cartProvider.notifier.select((cart) => cart.getTotalPrice()),
     );

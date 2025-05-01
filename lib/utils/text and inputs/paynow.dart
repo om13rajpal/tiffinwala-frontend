@@ -3,6 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/providers/cart.dart';
+import 'package:tiffinwala/providers/loyalty.dart';
+import 'package:tiffinwala/providers/points.dart';
+import 'package:tiffinwala/screens/menu.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/buttons/checkbox.dart';
 
@@ -22,6 +25,7 @@ bool usingLoyaltyPoints = false;
 
 class _PaynowState extends ConsumerState<Paynow> {
   void handleCheckbox(bool isChecked) {
+    ref.read(isUsingLoyaltyProvider.notifier).setLoading(isChecked);
     setState(() {
       usingLoyaltyPoints = isChecked;
     });
@@ -29,7 +33,9 @@ class _PaynowState extends ConsumerState<Paynow> {
 
   @override
   Widget build(BuildContext context) {
+    loyaltyPoints = ref.watch(setPointsProvider);
     List<CartItems> cartItems = ref.watch(cartProvider);
+
     totalPrice = ref.watch(
       cartProvider.notifier.select((cart) => cart.getTotalPrice()),
     );

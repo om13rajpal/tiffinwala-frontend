@@ -1,9 +1,14 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart' as material;
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tiffinwala/constants/url.dart';
+import 'package:tiffinwala/providers/address.dart';
+import 'package:tiffinwala/providers/firstname.dart';
+import 'package:tiffinwala/providers/lastname.dart';
+import 'package:tiffinwala/providers/points.dart';
 import 'package:tiffinwala/screens/auth.dart';
 import 'package:tiffinwala/screens/orders.dart';
 import 'package:tiffinwala/utils/appbar.dart';
@@ -13,11 +18,11 @@ import 'package:tiffinwala/utils/text%20and%20inputs/address.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/badge.dart';
 import 'package:http/http.dart' as http;
 
-class Profile extends StatefulWidget {
+class Profile extends ConsumerStatefulWidget {
   const Profile({super.key});
 
   @override
-  State<Profile> createState() => _ProfileState();
+  ConsumerState<Profile> createState() => _ProfileState();
 }
 
 List<String> _settings = [
@@ -41,7 +46,7 @@ List<Color> _bgColors = [
   Color.fromARGB(255, 153, 153, 153),
 ];
 
-class _ProfileState extends State<Profile> {
+class _ProfileState extends ConsumerState<Profile> {
   late int loyaltyPoints = 0;
   late String phoneNumber = "";
   late List<dynamic> pastOrders = [];
@@ -49,7 +54,7 @@ class _ProfileState extends State<Profile> {
   late String lastName = "";
   late String address = "";
 
-  Future<void> getLoyaltyPoints() async {
+  Future<void> getLoyaltyPoints(WidgetRef ref) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     var phone = prefs.getString('phone');
     var token = prefs.getString('token');
@@ -65,6 +70,7 @@ class _ProfileState extends State<Profile> {
     var jsonRes = jsonDecode(response.body);
     if (jsonRes['status']) {
       loyaltyPoints = jsonRes['data'];
+      ref.read(setPointsProvider.notifier).setPoints(loyaltyPoints);
     }
   }
 
@@ -88,7 +94,7 @@ class _ProfileState extends State<Profile> {
     }
   }
 
-  Future<void> getUserData() async {
+  Future<void> getUserData(WidgetRef ref) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     var phone = prefs.getString('phone');
     var token = prefs.getString('token');
@@ -106,7 +112,10 @@ class _ProfileState extends State<Profile> {
       firstName = jsonRes['data']['firstName'];
       lastName = jsonRes['data']['lastName'];
       address = jsonRes['data']['address'];
-      setState(() {});
+
+      ref.read(setFirstNameProvider.notifier).setFirstName(firstName);
+      ref.read(setLastNameProvider.notifier).setLastName(lastName);
+      ref.read(setAddressProvider.notifier).setAddress(address);
     } else {
       print('Failed to fetch user data: ${jsonRes['message']}');
     }
@@ -114,9 +123,9 @@ class _ProfileState extends State<Profile> {
 
   @override
   void initState() {
-    getLoyaltyPoints();
+    getLoyaltyPoints(ref);
     getPastOrders();
-    getUserData();
+    getUserData(ref);
     super.initState();
   }
 
@@ -132,12 +141,19 @@ class _ProfileState extends State<Profile> {
 
   @override
   Widget build(BuildContext context) {
+    final loyaltyPoints = ref.watch(setPointsProvider);
+    final firstName = ref.watch(setFirstNameProvider);
+    final lastName = ref.watch(setLastNameProvider);
+    final address = ref.watch(setAddressProvider);
     List<String> details = [phoneNumber, 'Loyalty Points'];
 
     List<VoidCallback> settingFunctions = [
-      () => editPersonalDetails(context),
-      () => editAddress(context),
-      () => Navigator.push(context, MaterialPageRoute(builder: (context) => Orders(),)),
+      () => editPersonalDetails(context, firstName, lastName, () => getUserData(ref),),
+      () => editAddress(context, address, () => getUserData(ref),),
+      () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => Orders()),
+      ),
       () => logout(context),
     ];
 
@@ -165,7 +181,7 @@ class _ProfileState extends State<Profile> {
                         ),
                       ),
                       SizedBox(height: 4),
-                      Address(address: address,),
+                      Address(address: address),
                     ],
                   ),
                 ),
@@ -246,7 +262,12 @@ class _ProfileState extends State<Profile> {
   }
 }
 
-Future<dynamic> editPersonalDetails(material.BuildContext context) {
+Future<dynamic> editPersonalDetails(
+  material.BuildContext context,
+  String firstName,
+  String lastName,
+  VoidCallback onPressed,
+) {
   return showDialog(
     context: context,
     builder: (context) {
@@ -269,13 +290,13 @@ Future<dynamic> editPersonalDetails(material.BuildContext context) {
               constraints: const BoxConstraints(maxWidth: 400),
               child: Form(
                 controller: controller,
-                child: const FormTableLayout(
+                child: FormTableLayout(
                   rows: [
                     FormField<String>(
                       key: FormKey(#firstName),
                       label: Text('First Name', style: TextStyle(fontSize: 12)),
                       child: TextField(
-                        initialValue: 'John',
+                        initialValue: firstName,
                         style: TextStyle(fontSize: 11),
                       ),
                     ),
@@ -283,7 +304,7 @@ Future<dynamic> editPersonalDetails(material.BuildContext context) {
                       key: FormKey(#lastName),
                       label: Text('Last Name', style: TextStyle(fontSize: 12)),
                       child: TextField(
-                        initialValue: 'Doe',
+                        initialValue: lastName,
                         style: TextStyle(fontSize: 11),
                       ),
                     ),
@@ -323,6 +344,7 @@ Future<dynamic> editPersonalDetails(material.BuildContext context) {
               if (!context.mounted) return;
 
               if (jsonRes['status']) {
+                onPressed();
                 Navigator.of(context).pop(values);
               } else {
                 showDialog(
@@ -349,7 +371,7 @@ Future<dynamic> editPersonalDetails(material.BuildContext context) {
   );
 }
 
-Future<dynamic> editAddress(material.BuildContext context) {
+Future<dynamic> editAddress(material.BuildContext context, String address, VoidCallback onPressed) {
   return showDialog(
     context: context,
     builder: (context) {
@@ -369,13 +391,13 @@ Future<dynamic> editAddress(material.BuildContext context) {
               constraints: const BoxConstraints(maxWidth: 400),
               child: Form(
                 controller: controller,
-                child: const FormTableLayout(
+                child: FormTableLayout(
                   rows: [
                     FormField<String>(
                       key: FormKey(#address),
                       label: Text('Address', style: TextStyle(fontSize: 12)),
                       child: TextField(
-                        initialValue: 'Street xyz, Ottawa, Canada',
+                        initialValue: address,
                         style: TextStyle(fontSize: 11),
                       ),
                     ),
@@ -411,6 +433,7 @@ Future<dynamic> editAddress(material.BuildContext context) {
               var jsonRes = jsonDecode(res.body);
               if (!context.mounted) return;
               if (jsonRes['status']) {
+                onPressed();
                 Navigator.of(context).pop(values);
               } else {
                 showDialog(
