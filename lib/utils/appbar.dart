@@ -43,7 +43,7 @@ class _TiffinAppBarState extends State<TiffinAppBar> {
       actionsPadding: EdgeInsets.symmetric(horizontal: 10),
       titleSpacing: 20,
       title: Text(
-        'Tiffinwala',
+        widget.title,
         style: TextStyle(
           fontSize: 15,
           color: AppColors.icon,

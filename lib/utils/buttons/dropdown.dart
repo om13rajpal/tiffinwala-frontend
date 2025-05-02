@@ -1,27 +1,28 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
+import 'package:tiffinwala/providers/ordermode.dart';
 
-class CustomDrowdpwn extends StatefulWidget {
+class CustomDrowdpwn extends ConsumerStatefulWidget {
   const CustomDrowdpwn({super.key});
 
   @override
-  State<CustomDrowdpwn> createState() => _DrowdpwnState();
+  ConsumerState<CustomDrowdpwn> createState() => _DrowdpwnState();
 }
 
 final List<String> dropDown = ['Delivery', 'Pickup'];
-String? selectedValue = dropDown[0];
 
-class _DrowdpwnState extends State<CustomDrowdpwn> {
+class _DrowdpwnState extends ConsumerState<CustomDrowdpwn> {
   @override
   Widget build(BuildContext context) {
+    String? selectedValue = ref.watch(setOrderModeProvider);
+
     return Select<String>(
       itemBuilder: (context, item) {
         return Text(item, style: const TextStyle(fontSize: 10));
       },
       popupConstraints: const BoxConstraints(maxHeight: 300, maxWidth: 200),
       onChanged: (value) {
-        setState(() {
-          selectedValue = value;
-        });
+        ref.read(setOrderModeProvider.notifier).setOrderMode(value!);
       },
       value: selectedValue,
       popup:
@@ -29,7 +30,12 @@ class _DrowdpwnState extends State<CustomDrowdpwn> {
             items: SelectItemList(
               children:
                   dropDown
-                      .map((e) => SelectItemButton(value: e, child: Text(e, style: const TextStyle(fontSize: 10))))
+                      .map(
+                        (e) => SelectItemButton(
+                          value: e,
+                          child: Text(e, style: const TextStyle(fontSize: 10)),
+                        ),
+                      )
                       .toList(),
             ),
           ).call,

@@ -14,6 +14,7 @@ import 'package:tiffinwala/constants/url.dart';
 import 'package:tiffinwala/providers/address.dart';
 import 'package:tiffinwala/providers/cart.dart';
 import 'package:tiffinwala/providers/loyalty.dart';
+import 'package:tiffinwala/providers/ordermode.dart';
 import 'package:tiffinwala/providers/points.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/category.dart';
@@ -36,6 +37,7 @@ class Menu extends ConsumerStatefulWidget {
 List<dynamic> categories = [];
 List<dynamic> items = [];
 List<dynamic> optionSets = [];
+  List<List<dynamic>> allCategoryItems = [];
 List<dynamic> categoryItems = [];
 List<dynamic> optionSetItemWise = [];
 
@@ -73,56 +75,71 @@ class _MenuState extends ConsumerState<Menu> {
   }
 
   Future<void> getMenu() async {
-    var response = await http.get(
-      Uri.parse('${BaseUrl.url}/menu'),
-      headers: {'Content-Type': 'application/json'},
-    );
+  // Clear any existing data so we start fresh
+  categories.clear();
+  items.clear();
+  optionSets.clear();
+  optionSetItemWise.clear();
+  menu.clear();
+  categoryItems.clear();
+  allCategoryItems.clear(); // <-- master backup
 
-    var jsonRes = await jsonDecode(response.body);
+  final response = await http.get(
+    Uri.parse('${BaseUrl.url}/menu'),
+    headers: {'Content-Type': 'application/json'},
+  );
+  final jsonRes = jsonDecode(response.body);
 
-    if (jsonRes['status']) {
-      categories = jsonRes['data']['categories'];
-      items = jsonRes['data']['items'];
-      optionSets = jsonRes['data']['optionSets'];
+  if (jsonRes['status']) {
+    // 1. Load raw data
+    categories = jsonRes['data']['categories'];
+    items = jsonRes['data']['items'];
+    optionSets = jsonRes['data']['optionSets'];
 
-      for (var item in items) {
-        List<dynamic> optionSetItems = [];
-        if (item['optionSetIds'] != null) {
-          for (var optionSetId in item['optionSetIds']) {
-            var optionSetItem = optionSets.firstWhere(
-              (element) => element['optionSetId'] == optionSetId,
-            );
-            optionSetItems.add(optionSetItem);
-          }
+    // 2. Build optionSetItemWise list
+    for (var item in items) {
+      final List<dynamic> opts = [];
+      if (item['optionSetIds'] != null) {
+        for (var id in item['optionSetIds']) {
+          opts.add(optionSets.firstWhere((o) => o['optionSetId'] == id));
         }
-        optionSetItemWise.add(optionSetItems.isNotEmpty ? optionSetItems : []);
       }
-
-      for (var i = 0; i < items.length; i++) {
-        var newItem = {'item': items[i], 'optionSet': optionSetItemWise[i]};
-        menu.add(newItem);
-      }
-
-      for (var category in categories) {
-        List itemCategory =
-            menu
-                .where(
-                  (element) =>
-                      element['item']['categoryId'] == category['categoryId'],
-                )
-                .toList();
-        categoryItems.add(itemCategory);
-      }
-      categories = categories.reversed.toList();
-      categoryItems = categoryItems.reversed.toList();
-
-      categoryKeys = List.generate(categories.length, (index) => GlobalKey());
-
-      setState(() {});
-    } else {
-      log(jsonRes['message']);
+      optionSetItemWise.add(opts);
     }
+
+    // 3. Build menu entries
+    for (var i = 0; i < items.length; i++) {
+      menu.add({
+        'item': items[i],
+        'optionSet': optionSetItemWise[i],
+      });
+    }
+
+    // 4. Group into categories
+    for (var cat in categories) {
+      final List<dynamic> inThisCat = menu.where((entry) {
+        return entry['item']['categoryId'] == cat['categoryId'];
+      }).toList();
+      categoryItems.add(inThisCat);
+    }
+
+    // 5. Reverse if you want the last category first
+    categories = categories.reversed.toList();
+    categoryItems = categoryItems.reversed.toList();
+
+    // 6. KEEP A MASTER COPY FOR SEARCH RESTORATION
+    allCategoryItems = categoryItems
+        .map((list) => List<dynamic>.from(list))
+        .toList();
+
+    // 7. Generate your scroll or list keys
+    categoryKeys = List.generate(categories.length, (_) => GlobalKey());
+
+    setState(() {});
+  } else {
+    log(jsonRes['message']);
   }
+}
 
   void _openCheckout(double price) {
     var options = {
@@ -185,12 +202,14 @@ class _MenuState extends ConsumerState<Menu> {
       }
     }
 
+    String orderMode = ref.watch(setOrderModeProvider);
     var body = {
       'order': orders,
       'price': totalPrice,
       'phone': phone,
       'paymentStatus': 'completed',
       'paymentMethod': 'razorpay',
+      'orderMode': orderMode.toLowerCase(),
     };
     var res = await http.post(
       Uri.parse('${BaseUrl.url}/order/new'),
@@ -249,6 +268,7 @@ class _MenuState extends ConsumerState<Menu> {
         log('Failed to use loyalty points: ${jsonRes['message']}');
       }
     }
+    String orderMode = ref.watch(setOrderModeProvider);
 
     var body = {
       'order': orders,
@@ -256,6 +276,7 @@ class _MenuState extends ConsumerState<Menu> {
       'phone': phone,
       'paymentStatus': 'pending',
       'paymentMethod': 'cod',
+      'orderMode': orderMode.toLowerCase(),
     };
     var res = await http.post(
       Uri.parse('${BaseUrl.url}/order/new'),
@@ -306,6 +327,28 @@ class _MenuState extends ConsumerState<Menu> {
     } else {
       print('Failed to fetch user data: ${jsonRes['message']}');
     }
+  }
+
+  void _onSearchChanged(String value) {
+    final query = value.toLowerCase();
+    setState(() {
+      if (query.isNotEmpty) {
+        categoryItems = allCategoryItems.map((itemsList) {
+          return itemsList
+              .where((element) =>
+                  element['item']['itemName']
+                      .toString()
+                      .toLowerCase()
+                      .contains(query))
+              .toList();
+        }).toList();
+      } else {
+        // restore original
+        categoryItems = allCategoryItems
+            .map((list) => List<dynamic>.from(list))
+            .toList();
+      }
+    });
   }
 
   @override
@@ -398,36 +441,7 @@ class _MenuState extends ConsumerState<Menu> {
                                   color: AppColors.secondary,
                                 ),
                                 controller: searchController,
-                                onChanged: (value) {
-                                  if (value.isNotEmpty) {
-                                    List<List<dynamic>> newCategoryItems = [];
-
-                                    for (
-                                      int i = 0;
-                                      i < categories.length;
-                                      i++
-                                    ) {
-                                      List<dynamic> filteredItems =
-                                          categoryItems[i].where((element) {
-                                            return element['item']['itemName']
-                                                .toString()
-                                                .toLowerCase()
-                                                .contains(value.toLowerCase());
-                                          }).toList();
-
-                                      newCategoryItems.add(filteredItems);
-                                    }
-
-                                    setState(() {
-                                      categoryItems = newCategoryItems;
-                                    });
-                                  } else {
-                                    optionSetItemWise.clear();
-                                    menu.clear();
-                                    categoryItems.clear();
-                                    getMenu();
-                                  }
-                                },
+                                onChanged: _onSearchChanged,
                                 cursorOpacityAnimates: true,
                                 decoration: material.InputDecoration(
                                   contentPadding: EdgeInsets.only(top: 9),

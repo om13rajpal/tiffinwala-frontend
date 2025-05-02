@@ -82,7 +82,9 @@ class _PaynowState extends ConsumerState<Paynow> {
                       borderSide: BorderSide.none,
                     ),
                     prefixIcon: Icon(LucideIcons.badgePercent, size: 16),
-                    suffixIcon: Icon(LucideIcons.chevronRight, size: 16),
+                    suffixIcon: InkWell(
+                      onTap: () => print('Apply coupon'),
+                      child: Icon(LucideIcons.chevronRight, size: 16)),
                   ),
                 ),
               ),
