@@ -19,55 +19,52 @@ class Setting extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.start,
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 15),
-          child: Container(
-            padding: EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: bgcolor,
-              borderRadius: BorderRadius.circular(5),
-            ),
-            child: lucide.LucideIconWidget(icon: icon, size: 14),
-          ),
-        ),
-        SizedBox(width: 20),
-        Expanded(
-          child: Container(
-            height: 40,
-            decoration: BoxDecoration(
-              border:
-                  (index != 3)
-                      ? Border(bottom: BorderSide(color: Color(0xff464646)))
-                      : null,
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFFE2E2E2),
-                  ),
-                ),
-                material.IconButton(
-                  onPressed: onPressed,
-                  icon: lucide.LucideIconWidget(
-                    icon: LucideIcons.chevronRight,
-                    size: 13,
-                  ),
-                ),
-              ],
+    return GestureDetector(
+      onTap: onPressed,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Padding(
+            padding: const EdgeInsets.only(left: 15),
+            child: Container(
+              padding: EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: bgcolor,
+                borderRadius: BorderRadius.circular(5),
+              ),
+              child: lucide.LucideIconWidget(icon: icon, size: 14),
             ),
           ),
-        ),
-      ],
+          SizedBox(width: 20),
+          Expanded(
+            child: Container(
+              height: 40,
+              decoration: BoxDecoration(
+                border:
+                    (index != 3)
+                        ? Border(bottom: BorderSide(color: Color(0xff464646)))
+                        : null,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    label,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFFE2E2E2),
+                    ),
+                  ),
+                  material.Icon(LucideIcons.chevronRight, size: 13),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

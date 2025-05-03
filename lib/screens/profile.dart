@@ -53,12 +53,23 @@ class _ProfileState extends ConsumerState<Profile> {
   late String firstName = "";
   late String lastName = "";
   late String address = "";
+  late String phone;
+  late String token;
+
+  Future<void> initSharedPreferences() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    phone = prefs.getString('phone')!;
+    token = prefs.getString('token')!;
+    phoneNumber = phone;
+
+    if (token.isNotEmpty && phone.isNotEmpty) {
+      getLoyaltyPoints(ref);
+      getPastOrders();
+      getUserData(ref);
+    }
+  }
 
   Future<void> getLoyaltyPoints(WidgetRef ref) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    var phone = prefs.getString('phone');
-    var token = prefs.getString('token');
-    phoneNumber = phone!;
     var response = await http.get(
       Uri.parse('${BaseUrl.url}/user/loyalty/$phone'),
       headers: {
@@ -75,10 +86,6 @@ class _ProfileState extends ConsumerState<Profile> {
   }
 
   Future<void> getPastOrders() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    var phone = prefs.getString('phone');
-    var token = prefs.getString('token');
-
     var response = await http.get(
       Uri.parse('${BaseUrl.url}/user/orders/$phone'),
       headers: {
@@ -95,10 +102,6 @@ class _ProfileState extends ConsumerState<Profile> {
   }
 
   Future<void> getUserData(WidgetRef ref) async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    var phone = prefs.getString('phone');
-    var token = prefs.getString('token');
-
     var res = await http.get(
       Uri.parse('${BaseUrl.url}/user/$phone'),
       headers: {
@@ -123,9 +126,8 @@ class _ProfileState extends ConsumerState<Profile> {
 
   @override
   void initState() {
-    getLoyaltyPoints(ref);
-    getPastOrders();
-    getUserData(ref);
+    initSharedPreferences();
+
     super.initState();
   }
 
@@ -148,8 +150,13 @@ class _ProfileState extends ConsumerState<Profile> {
     List<String> details = [phoneNumber, 'Loyalty Points'];
 
     List<VoidCallback> settingFunctions = [
-      () => editPersonalDetails(context, firstName, lastName, () => getUserData(ref),),
-      () => editAddress(context, address, () => getUserData(ref),),
+      () => editPersonalDetails(
+        context,
+        firstName,
+        lastName,
+        () => getUserData(ref),
+      ),
+      () => editAddress(context, address, () => getUserData(ref)),
       () => Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => Orders()),
@@ -371,7 +378,11 @@ Future<dynamic> editPersonalDetails(
   );
 }
 
-Future<dynamic> editAddress(material.BuildContext context, String address, VoidCallback onPressed) {
+Future<dynamic> editAddress(
+  material.BuildContext context,
+  String address,
+  VoidCallback onPressed,
+) {
   return showDialog(
     context: context,
     builder: (context) {

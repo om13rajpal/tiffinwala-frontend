@@ -45,7 +45,6 @@ class _TiffinwalaState extends State<Tiffinwala> {
     return ShadcnApp(
       title: 'Tiffinwala',
       debugShowCheckedModeBanner: false,
-      // showPerformanceOverlay: true,
       theme: ThemeData(colorScheme: ColorSchemes.darkNeutral(), radius: 0.5),
       home: token ? const Menu() : const Auth(),
     );

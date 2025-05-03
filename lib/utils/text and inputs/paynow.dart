@@ -169,7 +169,7 @@ class _PaynowState extends ConsumerState<Paynow> {
                             ),
                           ),
                           GestureDetector(
-                            onTap: () => widget.openCheckout,
+                            onTap: () => widget.openCheckout(),
                             child: Text(
                               'Pay Online',
                               style: TextStyle(

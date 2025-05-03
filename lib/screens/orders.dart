@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:mobkit_dashed_border/mobkit_dashed_border.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
@@ -17,6 +16,7 @@ class Orders extends StatefulWidget {
 
 List<dynamic> pastOrders = [];
 
+/// Fetch past orders from the server and update the state.
 Future<void> getPastOrders() async {
   final prefs = await SharedPreferences.getInstance();
   final phone = prefs.getString('phone');
@@ -31,7 +31,6 @@ Future<void> getPastOrders() async {
   );
 
   final jsonRes = jsonDecode(response.body);
-  print(jsonRes);
 
   if (jsonRes['status'] == true) {
     pastOrders = jsonRes['data'];
@@ -41,8 +40,8 @@ Future<void> getPastOrders() async {
 class _OrdersState extends State<Orders> {
   @override
   void initState() {
-    super.initState();
     _fetchAndUpdate();
+    super.initState();
   }
 
   Future<void> _fetchAndUpdate() async {
@@ -78,12 +77,11 @@ class _OrdersState extends State<Orders> {
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(14),
-                        border: DashedBorder.fromBorderSide(
-                          side: const BorderSide(
-                              color: Colors.black, width: 0.5),
-                          dashLength: 4,
-                          spaceLength: 4,
-                        ),
+                        border: Border.all(
+                          width: 1,
+                          color: const Color.fromARGB(255, 37, 37, 37),
+
+                        )
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -118,15 +116,15 @@ class _OrdersState extends State<Orders> {
                                 children: [
                                   Expanded(
                                     child: Text(
-                                      '${item['itemName']} ×${item['quantity']}',
+                                      '${item['shortName']} ×${item['quantity']}',
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
-                                  Text('₹${item['price']}'),
+                                  Text('₹${item['unitPrice']}'),
                                 ],
                               ),
                             );
-                          }).toList(),
+                          }),
 
                           const Divider(height: 20),
 
