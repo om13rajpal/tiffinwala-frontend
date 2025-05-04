@@ -1,6 +1,7 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/material.dart' as material;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart' as lucide;
+import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/constants/veg.dart';
 import 'package:tiffinwala/providers/cart.dart';
@@ -139,7 +140,7 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
                               () => ref
                                   .read(cartProvider.notifier)
                                   .decrementCart(widget.item),
-                          child: LucideIconWidget(
+                          child: lucide.LucideIconWidget(
                             icon: LucideIcons.minus,
                             size: 11,
                           ),
@@ -157,7 +158,7 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
                               () => ref
                                   .read(cartProvider.notifier)
                                   .incrementCart(widget.item),
-                          child: LucideIconWidget(
+                          child: lucide.LucideIconWidget(
                             icon: LucideIcons.plus,
                             size: 11,
                           ),
@@ -168,8 +169,8 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
                   : SizedBox(
                     width: 54,
                     height: 26,
-                    child: ElevatedButton(
-                      style: ButtonStyle(
+                    child: material.ElevatedButton(
+                      style: material.ButtonStyle(
                         backgroundColor: WidgetStatePropertyAll(
                           Color(0xFF3E3E3E),
                         ),
@@ -190,10 +191,9 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
                             return [
                               addOns(
                                 context,
-                                Theme.of(context).textTheme,
                                 widget.optionSet,
                                 widget.item,
-                                ref,
+                                ref
                               ),
                             ];
                           },
@@ -228,7 +228,6 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
 
 WoltModalSheetPage addOns(
   BuildContext context,
-  TextTheme textTheme,
   List<dynamic> optionSet,
   dynamic item,
   WidgetRef ref,

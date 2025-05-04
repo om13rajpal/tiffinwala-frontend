@@ -9,10 +9,12 @@ import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/constants/url.dart';
 import 'package:tiffinwala/providers/address.dart';
 import 'package:tiffinwala/providers/cart.dart';
+import 'package:tiffinwala/providers/ismenuloaded.dart';
 import 'package:tiffinwala/providers/loyalty.dart';
 import 'package:tiffinwala/providers/ordermode.dart';
 import 'package:tiffinwala/providers/points.dart';
@@ -48,6 +50,7 @@ List<dynamic> menu = [];
 List<GlobalKey> categoryKeys = [];
 int loyaltyPoints = 0;
 
+
 TextEditingController searchController = TextEditingController();
 
 class _MenuState extends ConsumerState<Menu> {
@@ -57,10 +60,13 @@ class _MenuState extends ConsumerState<Menu> {
   final ItemScrollController _scrollController = ItemScrollController();
   final ScrollController _outerController = ScrollController();
   late String address = '';
+  late bool isLoading = ref.watch(isMenuLoadedProvider);
+
 
   // initializing shared preferences
   Future<void> initData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
+    ref.read(isMenuLoadedProvider.notifier).setMenu(true);
     phone = prefs.getString('phone')!;
     token = prefs.getString('token')!;
 
@@ -90,61 +96,59 @@ class _MenuState extends ConsumerState<Menu> {
 
   // fetching menu from the server
   Future<void> getMenu() async {
-    if (!context.mounted) {
-      categories.clear();
-      items.clear();
-      optionSets.clear();
-      optionSetItemWise.clear();
-      menu.clear();
-      categoryItems.clear();
-      allCategoryItems.clear();
+    categories.clear();
+    items.clear();
+    optionSets.clear();
+    optionSetItemWise.clear();
+    menu.clear();
+    categoryItems.clear();
+    allCategoryItems.clear();
 
-      final response = await http.get(
-        Uri.parse('${BaseUrl.url}/menu'),
-        headers: {'Content-Type': 'application/json'},
-      );
-      final jsonRes = jsonDecode(response.body);
+    final response = await http.get(
+      Uri.parse('${BaseUrl.url}/menu'),
+      headers: {'Content-Type': 'application/json'},
+    );
+    final jsonRes = jsonDecode(response.body);
 
-      if (jsonRes['status']) {
-        categories = jsonRes['data']['categories'];
-        items = jsonRes['data']['items'];
-        optionSets = jsonRes['data']['optionSets'];
+    if (jsonRes['status']) {
+      categories = jsonRes['data']['categories'];
+      items = jsonRes['data']['items'];
+      optionSets = jsonRes['data']['optionSets'];
 
-        for (var item in items) {
-          final List<dynamic> opts = [];
-          if (item['optionSetIds'] != null) {
-            for (var id in item['optionSetIds']) {
-              opts.add(optionSets.firstWhere((o) => o['optionSetId'] == id));
-            }
+      for (var item in items) {
+        final List<dynamic> opts = [];
+        if (item['optionSetIds'] != null) {
+          for (var id in item['optionSetIds']) {
+            opts.add(optionSets.firstWhere((o) => o['optionSetId'] == id));
           }
-          optionSetItemWise.add(opts);
         }
-
-        for (var i = 0; i < items.length; i++) {
-          menu.add({'item': items[i], 'optionSet': optionSetItemWise[i]});
-        }
-
-        for (var cat in categories) {
-          final List<dynamic> inThisCat =
-              menu.where((entry) {
-                return entry['item']['categoryId'] == cat['categoryId'];
-              }).toList();
-          categoryItems.add(inThisCat);
-        }
-
-        categories = categories.reversed.toList();
-        categoryItems = categoryItems.reversed.toList();
-
-        allCategoryItems =
-            categoryItems.map((list) => List<dynamic>.from(list)).toList();
-
-        categoryKeys = List.generate(categories.length, (_) => GlobalKey());
-
-        setState(() {});
-      } else {
-        log(jsonRes['message']);
+        optionSetItemWise.add(opts);
       }
-    } 
+
+      for (var i = 0; i < items.length; i++) {
+        menu.add({'item': items[i], 'optionSet': optionSetItemWise[i]});
+      }
+
+      for (var cat in categories) {
+        final List<dynamic> inThisCat =
+            menu.where((entry) {
+              return entry['item']['categoryId'] == cat['categoryId'];
+            }).toList();
+        categoryItems.add(inThisCat);
+      }
+
+      categories = categories.reversed.toList();
+      categoryItems = categoryItems.reversed.toList();
+
+      allCategoryItems =
+          categoryItems.map((list) => List<dynamic>.from(list)).toList();
+
+      categoryKeys = List.generate(categories.length, (_) => GlobalKey());
+      ref.read(isMenuLoadedProvider.notifier).setMenu(false);
+      setState(() {});
+    } else {
+      log(jsonRes['message']);
+    }
   }
 
   // opening razorpay checkout page for payment
@@ -410,6 +414,7 @@ class _MenuState extends ConsumerState<Menu> {
     List<CartItems> cartItems = ref.watch(cartProvider);
     address = ref.watch(setAddressProvider);
     loyaltyPoints = ref.watch(setPointsProvider);
+    isLoading = ref.watch(isMenuLoadedProvider);
     double price = ref.watch(
       cartProvider.notifier.select((cart) => cart.getTotalPrice()),
     );
@@ -559,37 +564,70 @@ class _MenuState extends ConsumerState<Menu> {
         ),
         child: Padding(
           padding: EdgeInsets.all(5),
-          child: ScrollConfiguration(
-            behavior: ScrollConfiguration.of(
-              context,
-            ).copyWith(scrollbars: false),
-            child: ScrollablePositionedList.builder(
-              itemScrollController: _scrollController,
-              physics: BouncingScrollPhysics(),
-              shrinkWrap: true,
-              itemCount: categories.length,
-              itemBuilder: (context, index) {
-                if (index >= categoryItems.length) {
-                  return SizedBox();
-                }
+          child:
+              (isLoading)
+                  ? Skeletonizer(
+                    containersColor: AppColors.accent,
+                    enableSwitchAnimation: true,
+                    effect: PulseEffect(
+                      from: const material.Color.fromARGB(255, 126, 126, 126),
+                      to: const material.Color.fromARGB(255, 82, 82, 82).withAlpha(100),
+                      duration: Duration(milliseconds: 800),
+                    ),
+                    enabled: isLoading,
+                    child: material.Padding(
+                      padding: const EdgeInsets.only(left: 10, top: 10),
+                      child: Column(
+                        children: List.generate(7, (index) {
+                          return material.Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: material.Row(
+                              children: [
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text('Spring roll combination'),
+                                    Text('879 ka hai ye'),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+                      ),
+                    ),
+                  )
+                  : ScrollConfiguration(
+                    behavior: ScrollConfiguration.of(
+                      context,
+                    ).copyWith(scrollbars: false),
+                    child: ScrollablePositionedList.builder(
+                      itemScrollController: _scrollController,
+                      physics: BouncingScrollPhysics(),
+                      shrinkWrap: true,
+                      itemCount: categories.length,
+                      itemBuilder: (context, index) {
+                        if (index >= categoryItems.length) {
+                          return SizedBox();
+                        }
 
-                if (categoryItems[index].length == 0) {
-                  return SizedBox();
-                }
+                        if (categoryItems[index].length == 0) {
+                          return SizedBox();
+                        }
 
-                return Padding(
-                  padding: EdgeInsets.only(bottom: 10),
-                  child: material.Container(
-                    key: categoryKeys[index],
-                    child: Category(
-                      title: categories[index]['name'],
-                      items: categoryItems[index],
+                        return Padding(
+                          padding: EdgeInsets.only(bottom: 10),
+                          child: material.Container(
+                            key: categoryKeys[index],
+                            child: Category(
+                              title: categories[index]['name'],
+                              items: categoryItems[index],
+                            ),
+                          ),
+                        );
+                      },
                     ),
                   ),
-                );
-              },
-            ),
-          ),
         ),
       ),
     );
