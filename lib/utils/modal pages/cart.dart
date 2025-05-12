@@ -14,13 +14,16 @@ SliverWoltModalSheetPage cart(
     pageTitle: Padding(
       padding: const EdgeInsets.only(left: 30, right: 30, bottom: 20),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
           Text(
             'View your',
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
           SizedBox(width: 5),
-          GradientText(text: 'Cart'),
+          Transform.translate(
+            offset: Offset(0, 1),
+            child: GradientText(text: 'Cart')),
         ],
       ),
     ),

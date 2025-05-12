@@ -1,3 +1,3 @@
 class BaseUrl {
-  static const String url = "https://tiffinwala-backend-jia2.onrender.com";
+  static const String url = "http://localhost:3000";
 }

@@ -58,7 +58,10 @@ class Setting extends StatelessWidget {
                       color: Color(0xFFE2E2E2),
                     ),
                   ),
-                  material.Icon(LucideIcons.chevronRight, size: 13),
+                  material.Padding(
+                    padding: const EdgeInsets.only(right: 10),
+                    child: material.Icon(LucideIcons.chevronRight, size: 13),
+                  ),
                 ],
               ),
             ),

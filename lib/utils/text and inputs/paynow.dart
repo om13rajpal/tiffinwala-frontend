@@ -151,34 +151,45 @@ class _PaynowState extends ConsumerState<Paynow> {
                   context: context,
                   builder: (context) {
                     return AlertDialog(
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                       backgroundColor: AppColors.accent,
-                      content: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                              widget.cod();
-                            },
-                            child: Text(
-                              'Cash on Delivery',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
+                      content: SizedBox(
+                        height: 70,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            GestureDetector(
+                              onTap: () {
+                                widget.cod();
+                              },
+                              child: Text(
+                                'Cash on Delivery',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
-                          ),
-                          GestureDetector(
-                            onTap: () => widget.openCheckout(),
-                            child: Text(
-                              'Pay Online',
-                              style: TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.w600,
+                            const SizedBox(height: 5),
+                            Divider(
+                              color: const Color.fromARGB(255, 77, 77, 77),
+                              thickness: 1,
+                            ),
+                            GestureDetector(
+                              onTap: () => widget.openCheckout(),
+                              child: Text(
+                                'Pay Online',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     );
                   },

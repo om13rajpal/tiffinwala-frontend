@@ -2,12 +2,17 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart' as material;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart' as lucide;
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:skeletonizer/skeletonizer.dart';
+import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/constants/url.dart';
 import 'package:tiffinwala/providers/address.dart';
+import 'package:tiffinwala/providers/addressloaded.dart';
 import 'package:tiffinwala/providers/firstname.dart';
 import 'package:tiffinwala/providers/lastname.dart';
+import 'package:tiffinwala/providers/nameloaded.dart';
 import 'package:tiffinwala/providers/points.dart';
 import 'package:tiffinwala/screens/auth.dart';
 import 'package:tiffinwala/screens/orders.dart';
@@ -56,11 +61,17 @@ class _ProfileState extends ConsumerState<Profile> {
   late String phone;
   late String token;
 
+  late bool addressLoading = ref.watch(isAddressLoadedProvider);
+  late bool isNameLoading = ref.watch(isNameLoadedProvider);
+
   Future<void> initSharedPreferences() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     phone = prefs.getString('phone')!;
     token = prefs.getString('token')!;
     phoneNumber = phone;
+
+    ref.read(isAddressLoadedProvider.notifier).setAddressLoaded(true);
+    ref.read(isNameLoadedProvider.notifier).setNameLoaded(true);
 
     if (token.isNotEmpty && phone.isNotEmpty) {
       getLoyaltyPoints(ref);
@@ -119,6 +130,8 @@ class _ProfileState extends ConsumerState<Profile> {
       ref.read(setFirstNameProvider.notifier).setFirstName(firstName);
       ref.read(setLastNameProvider.notifier).setLastName(lastName);
       ref.read(setAddressProvider.notifier).setAddress(address);
+      ref.read(isNameLoadedProvider.notifier).setNameLoaded(false);
+      ref.read(isAddressLoadedProvider.notifier).setAddressLoaded(false);
     } else {
       print('Failed to fetch user data: ${jsonRes['message']}');
     }
@@ -147,6 +160,9 @@ class _ProfileState extends ConsumerState<Profile> {
     final firstName = ref.watch(setFirstNameProvider);
     final lastName = ref.watch(setLastNameProvider);
     final address = ref.watch(setAddressProvider);
+    addressLoading = ref.watch(isAddressLoadedProvider);
+    isNameLoading = ref.watch(isNameLoadedProvider);
+
     List<String> details = [phoneNumber, 'Loyalty Points'];
 
     List<VoidCallback> settingFunctions = [
@@ -180,15 +196,85 @@ class _ProfileState extends ConsumerState<Profile> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       VerifiedBadge(),
-                      Text(
-                        "$firstName $lastName",
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
+                      (isNameLoading)
+                          ? Skeletonizer(
+                            containersColor: AppColors.accent,
+                            enableSwitchAnimation: true,
+                            enabled: isNameLoading,
+
+                            effect: PulseEffect(
+                              from: const material.Color.fromARGB(
+                                255,
+                                126,
+                                126,
+                                126,
+                              ),
+                              to: const material.Color.fromARGB(
+                                255,
+                                82,
+                                82,
+                                82,
+                              ).withAlpha(100),
+                              duration: Duration(milliseconds: 800),
+                            ),
+                            child: Text(
+                              'Om Rajpal',
+                              style: TextStyle(
+                                fontSize: 26,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          )
+                          : Text(
+                            "$firstName $lastName",
+                            style: TextStyle(
+                              fontSize: 26,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
                       SizedBox(height: 4),
-                      Address(address: address),
+                      (addressLoading)
+                          ? Row(
+                            children: [
+                              lucide.LucideIconWidget(
+                                icon: LucideIcons.map,
+                                strokeWidth: 2,
+                                color: AppColors.icon,
+                                size: 14,
+                              ),
+                              SizedBox(width: 10),
+                              Skeletonizer(
+                                containersColor: AppColors.accent,
+                                enableSwitchAnimation: true,
+                                effect: PulseEffect(
+                                  from: const material.Color.fromARGB(
+                                    255,
+                                    126,
+                                    126,
+                                    126,
+                                  ),
+                                  to: const material.Color.fromARGB(
+                                    255,
+                                    82,
+                                    82,
+                                    82,
+                                  ).withAlpha(100),
+                                  duration: Duration(milliseconds: 800),
+                                ),
+                                enabled: addressLoading,
+                                child: material.Text(
+                                  'house no. 381 sector 16 -17 hisar 120551',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    overflow: TextOverflow.ellipsis,
+                                    color: AppColors.icon,
+                                    fontWeight: FontWeight.w400,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          )
+                          : Address(address: address),
                     ],
                   ),
                 ),
@@ -323,7 +409,10 @@ Future<dynamic> editPersonalDetails(
         ),
         actions: [
           PrimaryButton(
-            child: const Text('Save changes'),
+            child: const Text(
+              'Save changes',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+            ),
             onPressed: () async {
               List<String> valueList = [];
               final values = controller.values.map((key, value) {
@@ -339,7 +428,7 @@ Future<dynamic> editPersonalDetails(
 
               var res = await http.put(
                 Uri.parse('${BaseUrl.url}/user/name/$phone'),
-                body: jsonEncode(body), // pass the updated map
+                body: jsonEncode(body),
                 headers: {
                   'Content-Type': 'application/json',
                   'authorization': 'Bearer $token',
@@ -420,7 +509,10 @@ Future<dynamic> editAddress(
         ),
         actions: [
           PrimaryButton(
-            child: const Text('Save changes'),
+            child: const Text(
+              'Save changes',
+              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
+            ),
             onPressed: () async {
               var address = "";
               var values = controller.values.map((key, value) {

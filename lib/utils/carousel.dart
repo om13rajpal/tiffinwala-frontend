@@ -7,6 +7,14 @@ class PosterCarousel extends StatefulWidget {
   State<PosterCarousel> createState() => _PosterCarouselState();
 }
 
+List<String> _posters = [
+  'assets/1.png',
+  'assets/2.png',
+  'assets/3.png',
+  'assets/1.png',
+  'assets/2.png',
+];
+
 class _PosterCarouselState extends State<PosterCarousel> {
   final CarouselController controller = CarouselController();
   @override
@@ -25,16 +33,12 @@ class _PosterCarouselState extends State<PosterCarousel> {
                 transition: const CarouselTransition.fading(),
                 controller: controller,
                 draggable: false,
-                autoplaySpeed: const Duration(seconds: 2),
-                itemCount: 5,
+                autoplaySpeed: const Duration(seconds: 4),
+                itemCount: _posters.length,
                 itemBuilder: (context, index) {
-                  return Container(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-
-                      color: Colors.primaries[index % Colors.primaries.length],
-                    ),
-                    child: Center(child: Text('Poster $index')),
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(20),
+                    child: Image.asset(_posters[index], fit: BoxFit.cover),
                   );
                 },
                 duration: const Duration(seconds: 1),

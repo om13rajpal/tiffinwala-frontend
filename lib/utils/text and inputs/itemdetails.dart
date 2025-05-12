@@ -7,6 +7,7 @@ import 'package:tiffinwala/constants/veg.dart';
 import 'package:tiffinwala/providers/cart.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/buttons/checkbox.dart';
+import 'package:tiffinwala/utils/text%20and%20inputs/gradientext.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
 class ItemDetails extends ConsumerStatefulWidget {
@@ -113,7 +114,7 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
                 child: Text(
                   widget.title,
                   style: TextStyle(
-                    fontSize: 11,
+                    fontSize: 12.5,
                     fontWeight: FontWeight.w700,
                     color:
                         (widget.isCartItem)
@@ -193,7 +194,7 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
                                 context,
                                 widget.optionSet,
                                 widget.item,
-                                ref
+                                ref,
                               ),
                             ];
                           },
@@ -215,7 +216,7 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
           Text(
             '₹ ${widget.price.toString()}',
             style: TextStyle(
-              fontSize: 10,
+              fontSize: 11.5,
               fontWeight: FontWeight.w500,
               color: Color(0xFF787878),
             ),
@@ -264,39 +265,32 @@ WoltModalSheetPage addOns(
     ),
     useSafeArea: true,
     child: Padding(
-      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
       child: Column(
         spacing: 15,
         children: [
-          ...optionSet.map((e) {
+          ...optionSet.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final e = entry.value;
             return Container(
-              padding: EdgeInsets.symmetric(horizontal: 7, vertical: 7),
+              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    '${e['name']}',
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.secondary,
-                      backgroundColor: Color(0xFF3E3E3E),
-                    ),
-                  ),
-                  SizedBox(height: 17),
+                  GradientText(text: e['name']),
+                  const SizedBox(height: 17),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: List.generate(e['options'].length, (index) {
+                    children: List.generate(e['options'].length, (i) {
+                      final opt = e['options'][i];
                       return Padding(
                         padding: const EdgeInsets.only(bottom: 15),
                         child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          crossAxisAlignment: CrossAxisAlignment.center,
                           children: [
                             Text(
-                              e['options'][index]['optionName'],
-                              style: TextStyle(
+                              opt['optionName'],
+                              style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w500,
                                 color: Color(0xFFD2D2D2),
@@ -305,25 +299,19 @@ WoltModalSheetPage addOns(
                             Row(
                               children: [
                                 Text(
-                                  (e['options'][index]['price'] == 0)
+                                  opt['price'] == 0
                                       ? ''
-                                      : '+ ₹${e['options'][index]['price']}',
-                                  style: TextStyle(
+                                      : '+ ₹${opt['price']}',
+                                  style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
                                     color: Color(0xFF787878),
                                   ),
                                 ),
                                 TiffinCheckbox(
-                                  preChecked:
-                                      (e['options'][index]['price'] == 0)
-                                          ? true
-                                          : false,
+                                  preChecked: opt['price'] == 0,
                                   onChanged: (isChecked) {
-                                    handleCheckbox(
-                                      e['options'][index],
-                                      isChecked,
-                                    );
+                                    handleCheckbox(opt, isChecked);
                                   },
                                 ),
                               ],
@@ -333,10 +321,19 @@ WoltModalSheetPage addOns(
                       );
                     }),
                   ),
+                  if (idx != optionSet.length - 1)
+                    const Divider(
+                      indent: 10,
+                      endIndent: 10,
+                      thickness: 0.5,
+                      color: Color.fromARGB(255, 65, 65, 65),
+                    ),
                 ],
               ),
             );
           }),
+
+          const SizedBox(height: 15),
         ],
       ),
     ),

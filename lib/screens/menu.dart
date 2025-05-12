@@ -13,6 +13,7 @@ import 'package:skeletonizer/skeletonizer.dart';
 import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/constants/url.dart';
 import 'package:tiffinwala/providers/address.dart';
+import 'package:tiffinwala/providers/addressloaded.dart';
 import 'package:tiffinwala/providers/cart.dart';
 import 'package:tiffinwala/providers/ismenuloaded.dart';
 import 'package:tiffinwala/providers/loyalty.dart';
@@ -50,7 +51,6 @@ List<dynamic> menu = [];
 List<GlobalKey> categoryKeys = [];
 int loyaltyPoints = 0;
 
-
 TextEditingController searchController = TextEditingController();
 
 class _MenuState extends ConsumerState<Menu> {
@@ -61,12 +61,13 @@ class _MenuState extends ConsumerState<Menu> {
   final ScrollController _outerController = ScrollController();
   late String address = '';
   late bool isLoading = ref.watch(isMenuLoadedProvider);
-
+  late bool isAddressLoading = ref.watch(isAddressLoadedProvider);
 
   // initializing shared preferences
   Future<void> initData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     ref.read(isMenuLoadedProvider.notifier).setMenu(true);
+    ref.read(isAddressLoadedProvider.notifier).setAddressLoaded(true);
     phone = prefs.getString('phone')!;
     token = prefs.getString('token')!;
 
@@ -173,8 +174,6 @@ class _MenuState extends ConsumerState<Menu> {
 
   // handling razorpay payment success
   void _handlePaymentSuccess(PaymentSuccessResponse response) async {
-    log("Payment Successful: ${response.paymentId}");
-
     List<dynamic> orders = [];
     List<CartItems> cartItems = ref.watch(cartProvider);
     for (var item in cartItems) {
@@ -191,56 +190,59 @@ class _MenuState extends ConsumerState<Menu> {
     double totalPrice = ref.read(cartProvider.notifier).getTotalPrice();
 
     bool usingLoyaltyPoints = ref.watch(isUsingLoyaltyProvider);
+    final int discount =
+        usingLoyaltyPoints
+            ? (loyaltyPoints > totalPrice ? totalPrice.toInt() : loyaltyPoints)
+            : 0;
 
-    if (usingLoyaltyPoints) {
-      var body = {'phone': phone, 'points': -loyaltyPoints};
-
-      var res = await http.post(
-        Uri.parse('${BaseUrl.url}/user/loyalty'),
-        body: jsonEncode(body),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      var jsonRes = jsonDecode(res.body);
-
-      if (jsonRes['status']) {
-        ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
-        log('Loyalty points used successfully');
-      } else {
-        ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
-        log('Failed to use loyalty points: ${jsonRes['message']}');
-      }
-    }
+    var body = {'phone': phone, 'points': -discount};
 
     String orderMode = ref.watch(setOrderModeProvider);
-    var body = {
+
+    var orderbody = {
       'order': orders,
       'price': totalPrice,
       'phone': phone,
       'paymentStatus': 'completed',
       'paymentMethod': 'razorpay',
       'orderMode': orderMode.toLowerCase(),
-      'discount': (usingLoyaltyPoints) ? loyaltyPoints : 0,
+      'discount': discount,
     };
-
+    
     var res = await http.post(
-      Uri.parse('${BaseUrl.url}/order/new'),
+      Uri.parse('${BaseUrl.url}/user/loyalty'),
       body: jsonEncode(body),
-      headers: {
-        'Content-Type': 'application/json',
-        'authorization': 'Bearer $token',
-      },
+      headers: {'Content-Type': 'application/json'},
     );
 
     var jsonRes = jsonDecode(res.body);
 
     if (jsonRes['status']) {
-      ref.read(cartProvider.notifier).clearCart();
-      if (!mounted) return;
-      Navigator.of(context).pop();
-      setState(() {
-        getMenu();
-      });
+      var res = await http.post(
+        Uri.parse('${BaseUrl.url}/order/new'),
+        body: jsonEncode(orderbody),
+        headers: {
+          'Content-Type': 'application/json',
+          'authorization': 'Bearer $token',
+        },
+      );
+
+      var jsonRes = jsonDecode(res.body);
+
+      if (jsonRes['status']) {
+        ref.read(cartProvider.notifier).clearCart();
+        if (!mounted) return;
+        Navigator.of(context).pop();
+        Navigator.of(context).pop();
+        setState(() {
+          getMenu();
+        });
+        ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
+        log('Loyalty points used successfully');
+      }
+    } else {
+      ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
+      log('Failed to use loyalty points: ${jsonRes['message']}');
     }
   }
 
@@ -262,56 +264,59 @@ class _MenuState extends ConsumerState<Menu> {
     double totalPrice = ref.read(cartProvider.notifier).getTotalPrice();
 
     bool usingLoyaltyPoints = ref.watch(isUsingLoyaltyProvider);
+    final int discount =
+        usingLoyaltyPoints
+            ? (loyaltyPoints > totalPrice ? totalPrice.toInt() : loyaltyPoints)
+            : 0;
 
-    if (usingLoyaltyPoints) {
-      var body = {'phone': phone, 'points': -loyaltyPoints};
+    var body = {'phone': phone, 'points': -discount};
 
-      var res = await http.post(
-        Uri.parse('${BaseUrl.url}/user/loyalty'),
-        body: jsonEncode(body),
-        headers: {'Content-Type': 'application/json'},
-      );
-
-      var jsonRes = jsonDecode(res.body);
-
-      if (jsonRes['status']) {
-        ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
-        log('Loyalty points used successfully');
-      } else {
-        ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
-        log('Failed to use loyalty points: ${jsonRes['message']}');
-      }
-    }
     String orderMode = ref.watch(setOrderModeProvider);
 
-    var body = {
+    var orderbody = {
       'order': orders,
       'price': totalPrice,
       'phone': phone,
       'paymentStatus': 'pending',
       'paymentMethod': 'cod',
       'orderMode': orderMode.toLowerCase(),
-      'discount': (usingLoyaltyPoints) ? loyaltyPoints : 0,
+      'discount': discount,
     };
+
     var res = await http.post(
-      Uri.parse('${BaseUrl.url}/order/new'),
+      Uri.parse('${BaseUrl.url}/user/loyalty'),
       body: jsonEncode(body),
-      headers: {
-        'Content-Type': 'application/json',
-        'authorization': 'Bearer $token',
-      },
+      headers: {'Content-Type': 'application/json'},
     );
 
     var jsonRes = jsonDecode(res.body);
 
     if (jsonRes['status']) {
-      ref.read(cartProvider.notifier).clearCart();
-      if (!mounted) return;
-      Navigator.of(context).pop();
-      Navigator.of(context).pop();
-      setState(() {
-        getMenu();
-      });
+      var res = await http.post(
+        Uri.parse('${BaseUrl.url}/order/new'),
+        body: jsonEncode(orderbody),
+        headers: {
+          'Content-Type': 'application/json',
+          'authorization': 'Bearer $token',
+        },
+      );
+
+      var jsonRes = jsonDecode(res.body);
+
+      if (jsonRes['status']) {
+        ref.read(cartProvider.notifier).clearCart();
+        if (!mounted) return;
+        Navigator.of(context).pop();
+        Navigator.of(context).pop();
+        setState(() {
+          getMenu();
+        });
+        ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
+        log('Loyalty points used successfully');
+      }
+    } else {
+      ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
+      log('Failed to use loyalty points: ${jsonRes['message']}');
     }
   }
 
@@ -339,6 +344,7 @@ class _MenuState extends ConsumerState<Menu> {
     if (jsonRes['status']) {
       address = jsonRes['data']['address'];
       ref.read(setAddressProvider.notifier).setAddress(address);
+      ref.read(isAddressLoadedProvider.notifier).setAddressLoaded(false);
     } else {
       print('Failed to fetch user data: ${jsonRes['message']}');
     }
@@ -415,6 +421,7 @@ class _MenuState extends ConsumerState<Menu> {
     address = ref.watch(setAddressProvider);
     loyaltyPoints = ref.watch(setPointsProvider);
     isLoading = ref.watch(isMenuLoadedProvider);
+    isAddressLoading = ref.watch(isAddressLoadedProvider);
     double price = ref.watch(
       cartProvider.notifier.select((cart) => cart.getTotalPrice()),
     );
@@ -436,7 +443,49 @@ class _MenuState extends ConsumerState<Menu> {
                     SliverToBoxAdapter(
                       child: material.Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Address(address: address),
+                        child:
+                            (isAddressLoading)
+                                ? Row(
+                                  children: [
+                                    lucide.LucideIconWidget(
+                                      icon: LucideIcons.map,
+                                      strokeWidth: 2,
+                                      color: AppColors.icon,
+                                      size: 14,
+                                    ),
+                                    SizedBox(width: 10),
+                                    Skeletonizer(
+                                      containersColor: AppColors.accent,
+                                      enableSwitchAnimation: true,
+                                      effect: PulseEffect(
+                                        from: const material.Color.fromARGB(
+                                          255,
+                                          126,
+                                          126,
+                                          126,
+                                        ),
+                                        to: const material.Color.fromARGB(
+                                          255,
+                                          82,
+                                          82,
+                                          82,
+                                        ).withAlpha(100),
+                                        duration: Duration(milliseconds: 800),
+                                      ),
+                                      enabled: isLoading,
+                                      child: material.Text(
+                                        'house no. 381 sector 16 -17 hisar 120551',
+                                        style: TextStyle(
+                                          fontSize: 11,
+                                          overflow: TextOverflow.ellipsis,
+                                          color: AppColors.icon,
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                )
+                                : Address(address: address),
                       ),
                     ),
                     SliverToBoxAdapter(child: SizedBox(height: 10)),
@@ -483,9 +532,14 @@ class _MenuState extends ConsumerState<Menu> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 15),
           margin: const EdgeInsets.symmetric(horizontal: 20),
-          height: 50,
+          height: 60,
           decoration: BoxDecoration(
-            color: AppColors.accent.withAlpha(250),
+            color: const material.Color.fromARGB(
+              255,
+              22,
+              22,
+              22,
+            ).withAlpha(250),
             borderRadius: BorderRadius.circular(15),
           ),
           child: Row(
@@ -517,8 +571,8 @@ class _MenuState extends ConsumerState<Menu> {
               ),
               TiffinButton(
                 label: 'CART',
-                width: 50,
-                height: 24,
+                width: 55,
+                height: 28,
                 onPressed: () {
                   WoltModalSheet.show(
                     context: context,
@@ -571,7 +625,12 @@ class _MenuState extends ConsumerState<Menu> {
                     enableSwitchAnimation: true,
                     effect: PulseEffect(
                       from: const material.Color.fromARGB(255, 126, 126, 126),
-                      to: const material.Color.fromARGB(255, 82, 82, 82).withAlpha(100),
+                      to: const material.Color.fromARGB(
+                        255,
+                        82,
+                        82,
+                        82,
+                      ).withAlpha(100),
                       duration: Duration(milliseconds: 800),
                     ),
                     enabled: isLoading,
@@ -612,6 +671,11 @@ class _MenuState extends ConsumerState<Menu> {
                         }
 
                         if (categoryItems[index].length == 0) {
+                          return SizedBox();
+                        }
+                        String categoryName =
+                            categories[index]['name'].toString().toLowerCase();
+                        if (!categoryName.contains('tiffin')) {
                           return SizedBox();
                         }
 
@@ -675,7 +739,14 @@ class _MenuState extends ConsumerState<Menu> {
                 context: context,
                 modalTypeBuilder: (context) => WoltModalType.dialog(),
                 pageListBuilder: (context) {
-                  return [menuPopUp(context, categories, _scrollToCategory)];
+                  return [
+                    menuPopUp(
+                      context,
+                      categories,
+                      categoryItems,
+                      _scrollToCategory,
+                    ),
+                  ];
                 },
               );
             },

@@ -16,24 +16,29 @@ class _AuthState extends ConsumerState<Auth> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: SizedBox(
-          width: double.infinity,
-          height: double.infinity,
-          child: Center(
-            child: ElevatedButton(
-              onPressed: () {
-                ref.read(isLoadingProvider.notifier).setLoading(false);
-                WoltModalSheet.show(
-                  context: context,
-                  pageListBuilder: (context) {
-                    final textTheme = Theme.of(context).textTheme;
-                    return [phone(context, textTheme, ref)];
+        child: Stack(
+          children: [
+            Image.asset('assets/auth.png', fit: BoxFit.cover),
+            SizedBox(
+              width: double.infinity,
+              height: double.infinity,
+              child: Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    ref.read(isLoadingProvider.notifier).setLoading(false);
+                    WoltModalSheet.show(
+                      context: context,
+                      pageListBuilder: (context) {
+                        final textTheme = Theme.of(context).textTheme;
+                        return [phone(context, textTheme, ref)];
+                      },
+                    );
                   },
-                );
-              },
-              child: Text('Get In'),
+                  child: Text('Get In'),
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

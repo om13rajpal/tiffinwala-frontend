@@ -52,7 +52,7 @@ class _TiffinAppBarState extends State<TiffinAppBar> {
       ),
       floating: true,
       pinned: false,
-      snap: false,
+      snap: true,
       backgroundColor: AppColors.primary,
       forceMaterialTransparency: true,
       actions:

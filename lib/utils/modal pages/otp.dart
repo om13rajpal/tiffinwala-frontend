@@ -2,9 +2,11 @@ import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_timer_countdown/flutter_timer_countdown.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart' as lucide_flutter;
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/constants/url.dart';
 import 'package:tiffinwala/providers/loading.dart';
 import 'package:tiffinwala/screens/menu.dart';
@@ -108,6 +110,24 @@ SliverWoltModalSheetPage otp(
       child: Column(
         spacing: 10,
         children: [
+          Center(
+            child: TimerCountdown(
+              format: CountDownTimerFormat.minutesSeconds,
+              enableDescriptions: false,
+              timeTextStyle: TextStyle(
+                fontSize: 21,
+                fontWeight: FontWeight.w600,
+                color: AppColors.secondary,
+              ),
+              colonsTextStyle: TextStyle(
+                fontSize: 21,
+                fontWeight: FontWeight.w600,
+                color: AppColors.secondary,
+              ),
+              endTime: DateTime.now().add(Duration(minutes: 15, seconds: 0)),
+            ),
+          ),
+          SizedBox(height: 10),
           Otp(otpHandler: handleOtp),
           TiffinButton(
             label: 'VERIFY',
