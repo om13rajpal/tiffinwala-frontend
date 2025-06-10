@@ -158,8 +158,8 @@ class _MenuState extends ConsumerState<Menu> {
       'key': 'rzp_test_U3VZm3qrX8l8I8',
       'amount': price * 100,
       'name': 'Tiffinwala',
-      'description': 'Test Payment',
-      'prefill': {'contact': '9123456789', 'email': 'test@razorpay.com'},
+      'description': 'Order Payment',
+      'prefill': {'contact': phone},
       'external': {
         'wallets': ['paytm'],
       },
@@ -208,7 +208,7 @@ class _MenuState extends ConsumerState<Menu> {
       'orderMode': orderMode.toLowerCase(),
       'discount': discount,
     };
-    
+
     var res = await http.post(
       Uri.parse('${BaseUrl.url}/user/loyalty'),
       body: jsonEncode(body),
@@ -234,9 +234,6 @@ class _MenuState extends ConsumerState<Menu> {
         if (!mounted) return;
         Navigator.of(context).pop();
         Navigator.of(context).pop();
-        setState(() {
-          getMenu();
-        });
         ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
         log('Loyalty points used successfully');
       }
@@ -308,9 +305,6 @@ class _MenuState extends ConsumerState<Menu> {
         if (!mounted) return;
         Navigator.of(context).pop();
         Navigator.of(context).pop();
-        setState(() {
-          getMenu();
-        });
         ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
         log('Loyalty points used successfully');
       }

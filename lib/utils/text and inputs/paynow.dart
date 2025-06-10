@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lottie/lottie.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/providers/cart.dart';
@@ -84,7 +86,8 @@ class _PaynowState extends ConsumerState<Paynow> {
                     prefixIcon: Icon(LucideIcons.badgePercent, size: 16),
                     suffixIcon: InkWell(
                       onTap: () => print('Apply coupon'),
-                      child: Icon(LucideIcons.chevronRight, size: 16)),
+                      child: Icon(LucideIcons.chevronRight, size: 16),
+                    ),
                   ),
                 ),
               ),
@@ -162,8 +165,27 @@ class _PaynowState extends ConsumerState<Paynow> {
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
                             GestureDetector(
-                              onTap: () {
+                              onTap: () async {
+                                showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (BuildContext context) {
+                                    return Container(
+                                      color: Colors.black,
+                                      child: Center(
+                                        child: Lottie.asset(
+                                          'assets/lottie/loading.json',
+                                          width: 200,
+                                          height: 200,
+                                          fit: BoxFit.contain,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                                );
+                                await Future.delayed(3000.ms);
                                 widget.cod();
+                                Navigator.pop(context);
                               },
                               child: Text(
                                 'Cash on Delivery',
