@@ -340,7 +340,7 @@ class _MenuState extends ConsumerState<Menu> {
       ref.read(setAddressProvider.notifier).setAddress(address);
       ref.read(isAddressLoadedProvider.notifier).setAddressLoaded(false);
     } else {
-      print('Failed to fetch user data: ${jsonRes['message']}');
+      log('Failed to fetch user data: ${jsonRes['message']}');
     }
   }
 

@@ -1,5 +1,5 @@
 import 'dart:convert';
-
+import 'dart:developer';
 import 'package:flutter/material.dart' as material;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart' as lucide;
@@ -133,7 +133,7 @@ class _ProfileState extends ConsumerState<Profile> {
       ref.read(isNameLoadedProvider.notifier).setNameLoaded(false);
       ref.read(isAddressLoadedProvider.notifier).setAddressLoaded(false);
     } else {
-      print('Failed to fetch user data: ${jsonRes['message']}');
+      log('Failed to fetch user data: ${jsonRes['message']}');
     }
   }
 

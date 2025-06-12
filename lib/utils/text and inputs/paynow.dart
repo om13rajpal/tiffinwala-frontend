@@ -1,13 +1,14 @@
+import 'dart:developer';
+
 import 'package:flutter/material.dart';
-import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lottie/lottie.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/providers/cart.dart';
 import 'package:tiffinwala/providers/loyalty.dart';
 import 'package:tiffinwala/providers/points.dart';
 import 'package:tiffinwala/screens/menu.dart';
+import 'package:tiffinwala/screens/payment.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/buttons/checkbox.dart';
 
@@ -85,7 +86,7 @@ class _PaynowState extends ConsumerState<Paynow> {
                     ),
                     prefixIcon: Icon(LucideIcons.badgePercent, size: 16),
                     suffixIcon: InkWell(
-                      onTap: () => print('Apply coupon'),
+                      onTap: () => log('Apply coupon'),
                       child: Icon(LucideIcons.chevronRight, size: 16),
                     ),
                   ),
@@ -150,71 +151,15 @@ class _PaynowState extends ConsumerState<Paynow> {
               width: 75,
               height: 27,
               onPressed: () {
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      backgroundColor: AppColors.accent,
-                      content: SizedBox(
-                        height: 70,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                          children: [
-                            GestureDetector(
-                              onTap: () async {
-                                showDialog(
-                                  context: context,
-                                  barrierDismissible: false,
-                                  builder: (BuildContext context) {
-                                    return Container(
-                                      color: Colors.black,
-                                      child: Center(
-                                        child: Lottie.asset(
-                                          'assets/lottie/loading.json',
-                                          width: 200,
-                                          height: 200,
-                                          fit: BoxFit.contain,
-                                        ),
-                                      ),
-                                    );
-                                  },
-                                );
-                                await Future.delayed(3000.ms);
-                                widget.cod();
-                                Navigator.pop(context);
-                              },
-                              child: Text(
-                                'Cash on Delivery',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(height: 5),
-                            Divider(
-                              color: const Color.fromARGB(255, 77, 77, 77),
-                              thickness: 1,
-                            ),
-                            GestureDetector(
-                              onTap: () => widget.openCheckout(),
-                              child: Text(
-                                'Pay Online',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                            ),
-                          ],
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder:
+                        (context) => PaymentPage(
+                          openCheckout: widget.openCheckout,
+                          cod: widget.cod,
                         ),
-                      ),
-                    );
-                  },
+                  ),
                 );
               },
             ),
