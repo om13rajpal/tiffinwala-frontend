@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 
 class PaymentDetailsTile extends StatelessWidget {
   final String title;
-  final String detail;
   final String badge;
   final IconData icon;
 
   const PaymentDetailsTile({
     super.key,
     required this.title,
-    required this.detail,
     required this.badge,
     required this.icon,
   });
@@ -30,11 +28,7 @@ class PaymentDetailsTile extends StatelessWidget {
         children: [
           Row(
             children: [
-              Icon(
-                icon,
-                size: 18,
-                color: Colors.white.withValues(alpha: 200),
-              ),
+              Icon(icon, size: 18, color: Colors.white.withValues(alpha: 200)),
               const SizedBox(width: 12),
               Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -48,14 +42,6 @@ class PaymentDetailsTile extends StatelessWidget {
                       color: Color(0xFFFFFFFF),
                     ),
                   ),
-                  Text(
-                    detail,
-                    style: const TextStyle(
-                      fontSize: 9,
-                      fontWeight: FontWeight.w400,
-                      color: Color(0xFF9F9F9F),
-                    ),
-                  ),
                 ],
               ),
             ],
@@ -64,7 +50,10 @@ class PaymentDetailsTile extends StatelessWidget {
             height: 16,
             width: 56,
             decoration: BoxDecoration(
-              color: badge.isNotEmpty ? const Color(0xff285531) : Colors.transparent,
+              color:
+                  badge.isNotEmpty
+                      ? const Color(0xff285531)
+                      : Colors.transparent,
               borderRadius: BorderRadius.circular(15),
             ),
             child: Center(
@@ -73,7 +62,10 @@ class PaymentDetailsTile extends StatelessWidget {
                 style: TextStyle(
                   fontWeight: FontWeight.w400,
                   fontSize: 7.5,
-                  color: badge.isNotEmpty ? const Color(0xFF98B995) : Colors.transparent,
+                  color:
+                      badge.isNotEmpty
+                          ? const Color(0xFF98B995)
+                          : Colors.transparent,
                 ),
               ),
             ),

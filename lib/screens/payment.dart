@@ -5,7 +5,7 @@ import 'package:tiffinwala/utils/appbar.dart';
 import 'package:tiffinwala/utils/paymenttile.dart';
 
 class PaymentPage extends ConsumerStatefulWidget {
-  final VoidCallback? openCheckout;
+  final void Function(String method)? openCheckout;
   final VoidCallback? cod;
 
   const PaymentPage({this.openCheckout, this.cod, super.key});
@@ -73,12 +73,13 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                           if (method == 'Cash on Delivery') {
                             widget.cod?.call();
                           } else {
-                            widget.openCheckout?.call();
+                            widget.openCheckout?.call(
+                              method,
+                            );
                           }
                         },
                         child: PaymentDetailsTile(
                           title: method,
-                          detail: 'Tap to select',
                           badge: selectedPayment == method ? 'Selected' : '',
                           icon: _getPaymentIcon(method),
                         ),

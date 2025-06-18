@@ -13,7 +13,7 @@ import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/buttons/checkbox.dart';
 
 class Paynow extends ConsumerStatefulWidget {
-  final VoidCallback openCheckout;
+  final void Function(String method)? openCheckout;
   final VoidCallback cod;
   final int loyaltyPoints;
   const Paynow(this.openCheckout, this.loyaltyPoints, this.cod, {super.key});
@@ -40,7 +40,9 @@ class _PaynowState extends ConsumerState<Paynow> {
     List<CartItems> cartItems = ref.watch(cartProvider);
 
     totalPrice = ref.watch(
-      cartProvider.notifier.select((cart) => cart.getTotalPrice()),
+      cartProvider.notifier.select(
+        (cart) => cart.getTotalPrice(deliveryFee: 20.0),
+      ),
     );
 
     loyaltyPrice =

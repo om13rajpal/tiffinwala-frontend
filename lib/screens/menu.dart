@@ -153,16 +153,40 @@ class _MenuState extends ConsumerState<Menu> {
   }
 
   // opening razorpay checkout page for payment
-  void _openCheckout(double price) {
+  void _openCheckout(double price, String method) {
+    final paymentMethodMap = {
+      'netbanking': false,
+      'card': false,
+      'wallet': false,
+      'emi': false,
+      'upi': false,
+      'paylater': false,
+    };
+
+    // Enable the selected method
+    switch (method) {
+      case 'Net Banking':
+        paymentMethodMap['netbanking'] = true;
+        break;
+      case 'Credit Card':
+      case 'Debit Card':
+        paymentMethodMap['card'] = true;
+        break;
+      case 'Wallet':
+        paymentMethodMap['wallet'] = true;
+        break;
+      case 'UPI':
+        paymentMethodMap['upi'] = true;
+        break;
+    }
+
     var options = {
       'key': 'rzp_test_U3VZm3qrX8l8I8',
       'amount': price * 100,
       'name': 'Tiffinwala',
       'description': 'Order Payment',
+      'method': paymentMethodMap,
       'prefill': {'contact': phone},
-      'external': {
-        'wallets': ['paytm'],
-      },
     };
 
     try {
@@ -574,9 +598,10 @@ class _MenuState extends ConsumerState<Menu> {
                       return [
                         cart(
                           context,
-                          () => _openCheckout(price),
+                          (method) => _openCheckout(price, method),
                           () => _handlePayOnDelivery(),
                           loyaltyPoints,
+                          ref,
                         ),
                       ];
                     },

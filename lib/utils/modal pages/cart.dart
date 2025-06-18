@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobkit_dashed_border/mobkit_dashed_border.dart';
+import 'package:tiffinwala/providers/cart.dart';
 import 'package:tiffinwala/utils/cartitems.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/gradientext.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/paynow.dart';
@@ -7,10 +9,12 @@ import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
 SliverWoltModalSheetPage cart(
   BuildContext context,
-  VoidCallback openCheckout,
+  final void Function(String method)? openCheckout,
   VoidCallback cod,
   int loyaltyPoints,
+  WidgetRef ref,
 ) {
+  final total = ref.read(cartProvider.notifier).getNormalTotalPrice();
   return WoltModalSheetPage(
     pageTitle: Padding(
       padding: const EdgeInsets.only(left: 30, right: 30, bottom: 20),
@@ -33,7 +37,7 @@ SliverWoltModalSheetPage cart(
       padding: const EdgeInsets.symmetric(horizontal: 30),
       width: MediaQuery.of(context).size.width,
       height: 100,
-      child: Paynow(openCheckout, loyaltyPoints, cod),
+      child: Paynow((method) => openCheckout?.call(method), loyaltyPoints, cod),
     ),
     forceMaxHeight: false,
     child: Center(
@@ -74,7 +78,7 @@ SliverWoltModalSheetPage cart(
                       ),
                     ),
                     Text(
-                      totalPrice.toString(),
+                      total.toString(),
                       style: TextStyle(
                         fontWeight: FontWeight.w500,
                         fontSize: 12,
@@ -96,7 +100,7 @@ SliverWoltModalSheetPage cart(
                       ),
                     ),
                     Text(
-                      (totalPrice * 0.025).toString(),
+                      (total * 0.025).toStringAsFixed(2),
                       style: TextStyle(
                         fontWeight: FontWeight.w500,
                         fontSize: 12,
@@ -118,7 +122,7 @@ SliverWoltModalSheetPage cart(
                       ),
                     ),
                     Text(
-                      (totalPrice * 0.025).toString(),
+                      (total * 0.025).toStringAsFixed(2),
                       style: TextStyle(
                         fontWeight: FontWeight.w500,
                         fontSize: 12,
@@ -166,7 +170,7 @@ SliverWoltModalSheetPage cart(
                       ),
                     ),
                     Text(
-                      (totalPrice + (totalPrice * 0.05) + 20).toString(),
+                      (total + (total * 0.05) + 20).toString(),
                       style: TextStyle(
                         fontWeight: FontWeight.w500,
                         fontSize: 12.5,
