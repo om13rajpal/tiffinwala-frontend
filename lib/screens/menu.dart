@@ -15,10 +15,12 @@ import 'package:tiffinwala/constants/url.dart';
 import 'package:tiffinwala/providers/address.dart';
 import 'package:tiffinwala/providers/addressloaded.dart';
 import 'package:tiffinwala/providers/cart.dart';
+import 'package:tiffinwala/providers/coupon.dart';
 import 'package:tiffinwala/providers/ismenuloaded.dart';
 import 'package:tiffinwala/providers/loyalty.dart';
 import 'package:tiffinwala/providers/ordermode.dart';
 import 'package:tiffinwala/providers/points.dart';
+import 'package:tiffinwala/screens/success.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/category.dart';
 import 'package:tiffinwala/utils/modal%20pages/cart.dart';
@@ -211,7 +213,7 @@ class _MenuState extends ConsumerState<Menu> {
       orders.add(order);
     }
 
-    double totalPrice = ref.read(cartProvider.notifier).getTotalPrice();
+    double totalPrice = ref.read(cartProvider.notifier).getTotalPrice(0);
 
     bool usingLoyaltyPoints = ref.watch(isUsingLoyaltyProvider);
     final int discount =
@@ -256,10 +258,16 @@ class _MenuState extends ConsumerState<Menu> {
       if (jsonRes['status']) {
         ref.read(cartProvider.notifier).clearCart();
         if (!mounted) return;
-        Navigator.of(context).pop();
-        Navigator.of(context).pop();
+        ref.read(couponProvider.notifier).reset();
         ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
         log('Loyalty points used successfully');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => Success()),
+          );
+        });
       }
     } else {
       ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
@@ -282,7 +290,7 @@ class _MenuState extends ConsumerState<Menu> {
       orders.add(order);
     }
 
-    double totalPrice = ref.read(cartProvider.notifier).getTotalPrice();
+    double totalPrice = ref.read(cartProvider.notifier).getTotalPrice(0);
 
     bool usingLoyaltyPoints = ref.watch(isUsingLoyaltyProvider);
     final int discount =
@@ -327,10 +335,16 @@ class _MenuState extends ConsumerState<Menu> {
       if (jsonRes['status']) {
         ref.read(cartProvider.notifier).clearCart();
         if (!mounted) return;
-        Navigator.of(context).pop();
-        Navigator.of(context).pop();
+        ref.read(couponProvider.notifier).reset();
         ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
         log('Loyalty points used successfully');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => Success()),
+          );
+        });
       }
     } else {
       ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
@@ -441,7 +455,7 @@ class _MenuState extends ConsumerState<Menu> {
     isLoading = ref.watch(isMenuLoadedProvider);
     isAddressLoading = ref.watch(isAddressLoadedProvider);
     double price = ref.watch(
-      cartProvider.notifier.select((cart) => cart.getTotalPrice()),
+      cartProvider.notifier.select((cart) => cart.getTotalPrice(0)),
     );
 
     return material.Scaffold(

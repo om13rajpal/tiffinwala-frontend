@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobkit_dashed_border/mobkit_dashed_border.dart';
-import 'package:tiffinwala/providers/cart.dart';
 import 'package:tiffinwala/utils/cartitems.dart';
+import 'package:tiffinwala/utils/text%20and%20inputs/bill.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/gradientext.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/paynow.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
@@ -14,7 +14,7 @@ SliverWoltModalSheetPage cart(
   int loyaltyPoints,
   WidgetRef ref,
 ) {
-  final total = ref.read(cartProvider.notifier).getNormalTotalPrice();
+
   return WoltModalSheetPage(
     pageTitle: Padding(
       padding: const EdgeInsets.only(left: 30, right: 30, bottom: 20),
@@ -62,125 +62,7 @@ SliverWoltModalSheetPage cart(
                 ),
               ),
             ),
-            Column(
-              spacing: 2,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Total Price',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12.5,
-                        color: const Color.fromARGB(255, 212, 212, 212),
-                      ),
-                    ),
-                    Text(
-                      total.toString(),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12,
-                        color: const Color.fromARGB(255, 184, 184, 184),
-                      ),
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      'CGST (2.5%)',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12.5,
-                        color: const Color.fromARGB(255, 212, 212, 212),
-                      ),
-                    ),
-                    Text(
-                      (total * 0.025).toStringAsFixed(2),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12,
-                        color: const Color.fromARGB(255, 184, 184, 184),
-                      ),
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      'SGST (2.5%)',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12.5,
-                        color: const Color.fromARGB(255, 212, 212, 212),
-                      ),
-                    ),
-                    Text(
-                      (total * 0.025).toStringAsFixed(2),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12,
-                        color: const Color.fromARGB(255, 184, 184, 184),
-                      ),
-                    ),
-                  ],
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Delivery Charges',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 12.5,
-                        color: const Color.fromARGB(255, 212, 212, 212),
-                      ),
-                    ),
-                    Text(
-                      '20',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12,
-                        color: const Color.fromARGB(255, 184, 184, 184),
-                      ),
-                    ),
-                  ],
-                ),
-                Divider(
-                  color: const Color.fromARGB(255, 49, 49, 49),
-                  thickness: 0.5,
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    Text(
-                      'Amount Payable',
-                      style: TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 13.5,
-                        color: const Color.fromARGB(255, 212, 212, 212),
-                      ),
-                    ),
-                    Text(
-                      (total + (total * 0.05) + 20).toString(),
-                      style: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12.5,
-                        color: const Color.fromARGB(255, 184, 184, 184),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
+            Bill(),
             Container(
               height: 0.8,
               width: double.infinity,

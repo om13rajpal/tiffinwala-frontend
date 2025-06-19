@@ -81,11 +81,14 @@ class CartNotifier extends StateNotifier<List<CartItems>> {
     return total;
   }
 
-    double getTotalPrice({double deliveryFee = 20.0}) {
+  double getTotalPrice(int discount) {
+    double deliveryFee = 20;
     double subtotal = 0.0;
     for (var item in state) {
       subtotal += item.totalPrice * item.quantity;
     }
+
+    subtotal = subtotal - (subtotal * discount / 100);
 
     double tax = subtotal * 0.05;
     double total = subtotal + tax + deliveryFee;

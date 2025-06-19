@@ -1,16 +1,19 @@
-import 'dart:developer';
+import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:tiffinwala/constants/colors.dart';
+import 'package:tiffinwala/constants/url.dart';
 import 'package:tiffinwala/providers/cart.dart';
+import 'package:tiffinwala/providers/coupon.dart';
 import 'package:tiffinwala/providers/loyalty.dart';
 import 'package:tiffinwala/providers/points.dart';
 import 'package:tiffinwala/screens/menu.dart';
 import 'package:tiffinwala/screens/payment.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/buttons/checkbox.dart';
+import 'package:http/http.dart' as http;
 
 class Paynow extends ConsumerStatefulWidget {
   final void Function(String method)? openCheckout;
@@ -25,6 +28,10 @@ class Paynow extends ConsumerStatefulWidget {
 double totalPrice = 0.0;
 double loyaltyPrice = 0.0;
 bool usingLoyaltyPoints = false;
+late String usingCoupon;
+int discount = 0;
+
+TextEditingController coupon = TextEditingController();
 
 class _PaynowState extends ConsumerState<Paynow> {
   void handleCheckbox(bool isChecked) {
@@ -34,20 +41,45 @@ class _PaynowState extends ConsumerState<Paynow> {
     });
   }
 
+  void verifyCoupon() async {
+    final body = {"code": coupon.text.trim().toLowerCase()};
+
+    final response = await http.post(
+      Uri.parse("${BaseUrl.url}/coupon/verify"),
+      body: jsonEncode(body),
+      headers: {"Content-Type": "application/json"},
+    );
+    final jsonRes = await jsonDecode(response.body);
+    if (response.statusCode == 200) {
+      usingCoupon = coupon.text.trim();
+      ref.read(couponProvider.notifier).setCoupon(discount);
+      setState(() {
+        final dis = jsonRes["data"]["discount"];
+        discount = dis;
+      });
+    }
+  }
+
+  void removeCoupon() async {
+    ref.read(couponProvider.notifier).reset();
+    discount = 0;
+    coupon.clear();
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     loyaltyPoints = ref.watch(setPointsProvider);
     List<CartItems> cartItems = ref.watch(cartProvider);
+    final couponUsed = ref.watch(couponProvider).verified;
 
     totalPrice = ref.watch(
-      cartProvider.notifier.select(
-        (cart) => cart.getTotalPrice(deliveryFee: 20.0),
-      ),
+      cartProvider.notifier.select((cart) => cart.getTotalPrice(discount)),
     );
 
     loyaltyPrice =
         ref.watch(
-          cartProvider.notifier.select((cart) => cart.getTotalPrice()),
+          cartProvider.notifier.select((cart) => cart.getTotalPrice(discount)),
         ) -
         widget.loyaltyPoints;
 
@@ -65,6 +97,11 @@ class _PaynowState extends ConsumerState<Paynow> {
               child: SizedBox(
                 height: 35,
                 child: TextField(
+                  controller:
+                      (couponUsed)
+                          ? TextEditingController(text: usingCoupon)
+                          : coupon,
+                  readOnly: couponUsed,
                   style: TextStyle(
                     fontSize: 13,
                     fontWeight: FontWeight.w500,
@@ -87,10 +124,18 @@ class _PaynowState extends ConsumerState<Paynow> {
                       borderSide: BorderSide.none,
                     ),
                     prefixIcon: Icon(LucideIcons.badgePercent, size: 16),
-                    suffixIcon: InkWell(
-                      onTap: () => log('Apply coupon'),
-                      child: Icon(LucideIcons.chevronRight, size: 16),
-                    ),
+                    suffixIcon:
+                        (couponUsed)
+                            ? InkWell(
+                              onTap: () => removeCoupon(),
+                              child: Icon(LucideIcons.x, size: 16),
+                            )
+                            : InkWell(
+                              onTap: () {
+                                verifyCoupon();
+                              },
+                              child: Icon(LucideIcons.chevronRight, size: 16),
+                            ),
                   ),
                 ),
               ),
@@ -139,7 +184,9 @@ class _PaynowState extends ConsumerState<Paynow> {
                   ),
                 ),
                 Text(
-                  (usingLoyaltyPoints) ? '₹ $loyaltyPrice' : '₹ $totalPrice',
+                  (usingLoyaltyPoints)
+                      ? '₹ ${loyaltyPrice.toStringAsFixed(2)}'
+                      : '₹ ${totalPrice.toStringAsFixed(2)}',
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w500,
