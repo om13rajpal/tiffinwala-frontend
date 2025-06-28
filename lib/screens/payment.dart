@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:tiffinwala/utils/appbar.dart';
 import 'package:tiffinwala/utils/paymenttile.dart';
+import 'package:tiffinwala/utils/text%20and%20inputs/bill.dart';
 
 class PaymentPage extends ConsumerStatefulWidget {
   final void Function(String method)? openCheckout;
@@ -31,66 +32,124 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     final selectedPayment = ref.watch(selectedPaymentProvider);
 
     return Scaffold(
+      backgroundColor: const Color(0xFF1C1C1C),
       body: SafeArea(
-        child: ScrollConfiguration(
-          behavior: ScrollConfiguration.of(context).copyWith(scrollbars: false),
-          child: CustomScrollView(
-            slivers: [
-              TiffinAppBar(centerTitle: true, title: 'Payment'),
-              SliverToBoxAdapter(child: SizedBox(height: 20)),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Text(
-                    'Payment Methods',
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFFA0A3B0),
+        child: Column(
+          children: [
+            Expanded(
+              child: CustomScrollView(
+                slivers: [
+                  TiffinAppBar(centerTitle: true, title: 'Payment'),
+                  SliverToBoxAdapter(child: SizedBox(height: 20)),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        'Payment Methods',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFA0A3B0),
+                        ),
+                      ),
                     ),
                   ),
-                ),
-              ),
-              SliverToBoxAdapter(child: SizedBox(height: 10)),
-              SliverToBoxAdapter(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 10,
-                  ),
-                  child: Column(
-                    children: List.generate(paymentMethods.length, (index) {
-                      final method = paymentMethods[index];
-                      return GestureDetector(
-                        onTap: () async {
-                          ref.read(selectedPaymentProvider.notifier).state =
-                              method;
-
-                          await Future.delayed(
-                            const Duration(milliseconds: 300),
+                  SliverToBoxAdapter(child: SizedBox(height: 10)),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Column(
+                        children: List.generate(paymentMethods.length, (index) {
+                          final method = paymentMethods[index];
+                          return GestureDetector(
+                            onTap: () async {
+                              ref.read(selectedPaymentProvider.notifier).state =
+                                  method;
+                            },
+                            child: PaymentDetailsTile(
+                              title: method,
+                              badge:
+                                  selectedPayment == method ? 'Selected' : '',
+                              icon: _getPaymentIcon(method),
+                            ),
                           );
-
-                          if (method == 'Cash on Delivery') {
+                        }),
+                      ),
+                    ),
+                  ),
+                  SliverToBoxAdapter(child: SizedBox(height: 25)),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Text(
+                        'Order Summary',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFFA0A3B0),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SliverToBoxAdapter(child: SizedBox(height: 10)),
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: Container(
+                        padding: const EdgeInsets.all(15),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF212121),
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withAlpha(100),
+                              blurRadius: 5,
+                              offset: Offset(0, 3),
+                            ),
+                          ],
+                        ),
+                        child: Bill(),
+                      ),
+                    ),
+                  ),
+                  SliverToBoxAdapter(child: SizedBox(height: 100)),
+                ],
+              ),
+            ),
+            Container(
+              color: const Color(0xFF212121),
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
+              child: ElevatedButton(
+                onPressed:
+                    selectedPayment != null
+                        ? () {
+                          if (selectedPayment == 'Cash on Delivery') {
                             widget.cod?.call();
                           } else {
-                            widget.openCheckout?.call(
-                              method,
-                            );
+                            widget.openCheckout?.call(selectedPayment);
                           }
-                        },
-                        child: PaymentDetailsTile(
-                          title: method,
-                          badge: selectedPayment == method ? 'Selected' : '',
-                          icon: _getPaymentIcon(method),
-                        ),
-                      );
-                    }),
+                        }
+                        : null,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF285531),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(15),
+                  ),
+                  minimumSize: Size(double.infinity, 50),
+                ),
+                child: Text(
+                  selectedPayment != null
+                      ? 'Pay with $selectedPayment'
+                      : 'Select a Payment Method',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: Colors.white,
                   ),
                 ),
               ),
-              SliverToBoxAdapter(child: SizedBox(height: 20)),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

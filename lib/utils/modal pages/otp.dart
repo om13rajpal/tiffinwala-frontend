@@ -8,6 +8,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/constants/url.dart';
+import 'package:tiffinwala/main.dart';
 import 'package:tiffinwala/providers/loading.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/modal%20pages/userdetails.dart';
@@ -66,6 +67,7 @@ SliverWoltModalSheetPage otp(
 
         prefs.setString('token', jsonRes['token']);
         prefs.setString('phone', phoneNumber);
+        ref.read(authProvider.notifier).state = true;
         Navigator.popUntil(context, (route) => route.isFirst);
       } else {
         ref.read(isLoadingProvider.notifier).setLoading(false);

@@ -13,6 +13,8 @@ void main() async {
   runApp(ProviderScope(child: Tiffinwala(token: token)));
 }
 
+final authProvider = StateProvider<bool>((ref) => false);
+
 bool isTokenValid(String? token) {
   if (token == null) return false;
 
@@ -23,30 +25,33 @@ bool isTokenValid(String? token) {
   return false;
 }
 
-class Tiffinwala extends StatefulWidget {
+class Tiffinwala extends ConsumerStatefulWidget {
   final String? token;
   const Tiffinwala({super.key, required this.token});
 
   @override
-  State<Tiffinwala> createState() => _TiffinwalaState();
+  ConsumerState<Tiffinwala> createState() => _TiffinwalaState();
 }
 
-late bool token;
-
-class _TiffinwalaState extends State<Tiffinwala> {
+class _TiffinwalaState extends ConsumerState<Tiffinwala> {
   @override
   void initState() {
-    token = isTokenValid(widget.token);
     super.initState();
+    bool valid = isTokenValid(widget.token);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      ref.read(authProvider.notifier).state = valid;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final isAuth = ref.watch(authProvider);
+
     return ShadcnApp(
       title: 'Tiffinwala',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(colorScheme: ColorSchemes.darkNeutral(), radius: 0.5),
-      home: token ? const Menu() : const Auth(),
+      home: isAuth ? const Menu() : const Auth(),
     );
   }
 }

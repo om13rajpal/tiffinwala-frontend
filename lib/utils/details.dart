@@ -3,8 +3,7 @@ import 'package:flutter/material.dart';
 class Details extends StatelessWidget {
   final String title;
   final String detail;
-  final String badge;
-  const Details({super.key, required this.title, required this.detail, required this.badge});
+  const Details({super.key, required this.title, required this.detail});
 
   @override
   Widget build(BuildContext context) {
@@ -27,7 +26,7 @@ class Details extends StatelessWidget {
               Text(
                 title,
                 style: TextStyle(
-                  fontSize: 13,
+                  fontSize: 13.5,
                   fontWeight: FontWeight.w500,
                   color: Color(0xFFFFFFFF),
                 ),
@@ -35,30 +34,12 @@ class Details extends StatelessWidget {
               Text(
                 detail,
                 style: TextStyle(
-                  fontSize: 9,
+                  fontSize: 10.5,
                   fontWeight: FontWeight.w400,
                   color: Color(0xFF9F9F9F),
                 ),
               ),
             ],
-          ),
-          Container(
-            height: 16,
-            width: 56,
-            decoration: BoxDecoration(
-              color: Color(0xff285531),
-              borderRadius: BorderRadius.circular(15),
-            ),
-            child: Center(
-              child: Text(
-                badge,
-                style: TextStyle(
-                  fontWeight: FontWeight.w400,
-                  fontSize: 7.5,
-                  color: Color(0xFF98B995),
-                ),
-              ),
-            ),
           ),
         ],
       ),

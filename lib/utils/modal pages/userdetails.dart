@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tiffinwala/constants/url.dart';
+import 'package:tiffinwala/main.dart';
 import 'package:tiffinwala/providers/loading.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/input.dart';
@@ -48,6 +49,7 @@ SliverWoltModalSheetPage userDetails(
 
       prefs.setString('token', jsonRes['token']);
       prefs.setString('phone', phoneNumber);
+      ref.read(authProvider.notifier).state = true;
       Navigator.popUntil(context, (route) => route.isFirst);
     } else {
       ref.read(isLoadingProvider.notifier).setLoading(false);

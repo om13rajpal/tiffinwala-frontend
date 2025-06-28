@@ -16,6 +16,7 @@ import 'package:tiffinwala/providers/address.dart';
 import 'package:tiffinwala/providers/addressloaded.dart';
 import 'package:tiffinwala/providers/cart.dart';
 import 'package:tiffinwala/providers/coupon.dart';
+import 'package:tiffinwala/providers/discount.dart';
 import 'package:tiffinwala/providers/ismenuloaded.dart';
 import 'package:tiffinwala/providers/loyalty.dart';
 import 'package:tiffinwala/providers/ordermode.dart';
@@ -38,6 +39,15 @@ class Menu extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<Menu> createState() => _MenuState();
+}
+
+class CustomFabLocation extends material.FloatingActionButtonLocation {
+  @override
+  Offset getOffset(material.ScaffoldPrelayoutGeometry scaffoldGeometry) {
+    final double x = scaffoldGeometry.scaffoldSize.width - 75;
+    final double y = scaffoldGeometry.scaffoldSize.height - 68;
+    return Offset(x, y);
+  }
 }
 
 // list declarations
@@ -202,6 +212,14 @@ class _MenuState extends ConsumerState<Menu> {
   void _handlePaymentSuccess(PaymentSuccessResponse response) async {
     List<dynamic> orders = [];
     List<CartItems> cartItems = ref.watch(cartProvider);
+    final discountState = ref.read(discountProvider);
+    final loyaltyDiscount = discountState.loyaltyDiscount;
+    final couponDiscount = discountState.couponDiscount;
+
+    double totalPrice = ref
+        .read(cartProvider.notifier)
+        .getPayableAmount(couponDiscount, loyaltyDiscount);
+
     for (var item in cartItems) {
       var order = {
         'shortName': item.item['itemName'],
@@ -212,8 +230,6 @@ class _MenuState extends ConsumerState<Menu> {
 
       orders.add(order);
     }
-
-    double totalPrice = ref.read(cartProvider.notifier).getTotalPrice(0);
 
     bool usingLoyaltyPoints = ref.watch(isUsingLoyaltyProvider);
     final int discount =
@@ -290,7 +306,13 @@ class _MenuState extends ConsumerState<Menu> {
       orders.add(order);
     }
 
-    double totalPrice = ref.read(cartProvider.notifier).getTotalPrice(0);
+    final discountState = ref.read(discountProvider);
+    final loyaltyDiscount = discountState.loyaltyDiscount;
+    final couponDiscount = discountState.couponDiscount;
+
+    double totalPrice = ref
+        .read(cartProvider.notifier)
+        .getPayableAmount(couponDiscount, loyaltyDiscount);
 
     bool usingLoyaltyPoints = ref.watch(isUsingLoyaltyProvider);
     final int discount =
@@ -455,10 +477,40 @@ class _MenuState extends ConsumerState<Menu> {
     isLoading = ref.watch(isMenuLoadedProvider);
     isAddressLoading = ref.watch(isAddressLoadedProvider);
     double price = ref.watch(
-      cartProvider.notifier.select((cart) => cart.getTotalPrice(0)),
+      cartProvider.notifier.select((cart) => cart.getNormalTotalPrice()),
     );
 
     return material.Scaffold(
+      floatingActionButtonLocation: CustomFabLocation(),
+      floatingActionButton: material.FloatingActionButton(
+        backgroundColor: const material.Color.fromARGB(
+          255,
+          22,
+          22,
+          22,
+        ).withAlpha(250),
+        child: lucide.LucideIconWidget(
+          icon: lucide.LucideIcons.utensils,
+          size: 16,
+          color: const material.Color.fromARGB(255, 178, 178, 178),
+        ),
+        onPressed: () {
+          WoltModalSheet.show(
+            context: context,
+            modalTypeBuilder: (context) => WoltModalType.dialog(),
+            pageListBuilder: (context) {
+              return [
+                menuPopUp(
+                  context,
+                  categories,
+                  categoryItems,
+                  _scrollToCategory,
+                ),
+              ];
+            },
+          );
+        },
+      ),
       body: SafeArea(
         child: DrawerOverlay(
           child: Stack(
@@ -530,7 +582,52 @@ class _MenuState extends ConsumerState<Menu> {
                     SliverToBoxAdapter(child: searchBar(context)),
                     SliverToBoxAdapter(child: SizedBox(height: 7)),
                     SliverToBoxAdapter(child: tiffinMenu(context)),
+                    SliverToBoxAdapter(child: SizedBox(height: 20)),
+                    SliverToBoxAdapter(
+                      child: material.Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Image.asset(
+                            'assets/logo_dark.png',
+                            fit: BoxFit.contain,
+                            width: 100,
+                            height: 100,
+                          ),
+                        ],
+                      ),
+                    ),
                     SliverToBoxAdapter(child: SizedBox(height: 5)),
+                    SliverToBoxAdapter(
+                      child: material.Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Image.asset(
+                            'assets/icons/fssai.png',
+                            fit: BoxFit.contain,
+                            width: 60,
+                          ),
+                        ],
+                      ),
+                    ),
+                    SliverToBoxAdapter(
+                      child: material.Padding(
+                        padding: const EdgeInsets.only(left: 10),
+                        child: Text(
+                          'LIC NO. 2301923745896',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: const material.Color.fromARGB(
+                              255,
+                              86,
+                              86,
+                              86,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    SliverToBoxAdapter(child: SizedBox(height: 20)),
                   ],
                 ),
               ),
@@ -558,13 +655,13 @@ class _MenuState extends ConsumerState<Menu> {
     return Positioned(
       bottom: 10,
       left: 0,
-      right: 0,
       child: Visibility(
         visible: cartItems.isNotEmpty,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 15),
           margin: const EdgeInsets.symmetric(horizontal: 20),
-          height: 60,
+          height: 58,
+          width: MediaQuery.of(context).size.width * 0.7,
           decoration: BoxDecoration(
             color: const material.Color.fromARGB(
               255,
@@ -763,52 +860,6 @@ class _MenuState extends ConsumerState<Menu> {
                   borderSide: BorderSide.none,
                 ),
                 prefixIcon: Icon(lucide.LucideIcons.search, size: 16),
-              ),
-            ),
-          ),
-          GestureDetector(
-            onTap: () {
-              WoltModalSheet.show(
-                context: context,
-                modalTypeBuilder: (context) => WoltModalType.dialog(),
-                pageListBuilder: (context) {
-                  return [
-                    menuPopUp(
-                      context,
-                      categories,
-                      categoryItems,
-                      _scrollToCategory,
-                    ),
-                  ];
-                },
-              );
-            },
-            child: Container(
-              width: 80,
-              height: 35,
-              decoration: BoxDecoration(
-                color: AppColors.accent,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Row(
-                spacing: 5,
-                mainAxisAlignment: MainAxisAlignment.center,
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    'Menu',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.secondary.withAlpha(200),
-                    ),
-                  ),
-                  lucide.LucideIconWidget(
-                    icon: lucide.LucideIcons.utensils,
-                    size: 13,
-                    color: AppColors.secondary.withAlpha(200),
-                  ),
-                ],
               ),
             ),
           ),

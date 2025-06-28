@@ -84,7 +84,7 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
                       right: 6,
                     ),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(3.5),
+                      borderRadius: BorderRadius.circular(5),
                       color: Color(0xFFF78080),
                     ),
                     child: Center(
@@ -93,7 +93,7 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
                               ? Text(
                                 'Best Seller',
                                 style: TextStyle(
-                                  fontSize: 6,
+                                  fontSize: 8.5,
                                   fontWeight: FontWeight.w700,
                                   color: Color(0xFFB30000),
                                   height: 0,
@@ -125,8 +125,8 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
               ),
               (itemExists)
                   ? Container(
-                    width: 54,
-                    height: 26,
+                    width: 65,
+                    height: 28,
                     padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(8),
@@ -143,13 +143,13 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
                                   .decrementCart(widget.item),
                           child: lucide.LucideIconWidget(
                             icon: LucideIcons.minus,
-                            size: 11,
+                            size: 13,
                           ),
                         ),
                         Text(
                           '$counter',
                           style: TextStyle(
-                            fontSize: 10,
+                            fontSize: 12,
                             fontWeight: FontWeight.w500,
                             color: AppColors.secondary,
                           ),
@@ -161,15 +161,15 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
                                   .incrementCart(widget.item),
                           child: lucide.LucideIconWidget(
                             icon: LucideIcons.plus,
-                            size: 11,
+                            size: 13,
                           ),
                         ),
                       ],
                     ),
                   )
                   : SizedBox(
-                    width: 54,
-                    height: 26,
+                    width: 65,
+                    height: 28,
                     child: material.ElevatedButton(
                       style: material.ButtonStyle(
                         backgroundColor: WidgetStatePropertyAll(
@@ -204,7 +204,7 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
                       child: Text(
                         'ADD',
                         style: TextStyle(
-                          fontSize: 9,
+                          fontSize: 10,
                           fontWeight: FontWeight.w600,
                           color: AppColors.secondary,
                         ),

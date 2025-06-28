@@ -81,20 +81,25 @@ class CartNotifier extends StateNotifier<List<CartItems>> {
     return total;
   }
 
-  double getTotalPrice(int discount) {
+double getPayableAmount(double couponPercent, double loyaltyPoints) {
     double deliveryFee = 20;
     double subtotal = 0.0;
+
     for (var item in state) {
       subtotal += item.totalPrice * item.quantity;
     }
 
-    subtotal = subtotal - (subtotal * discount / 100);
+    subtotal = subtotal - (subtotal * couponPercent / 100);
+
+    subtotal = subtotal - loyaltyPoints;
+
+    if (subtotal < 0) subtotal = 0;
 
     double tax = subtotal * 0.05;
-    double total = subtotal + tax + deliveryFee;
 
+    double total = subtotal + tax + deliveryFee;
     return total;
-  }
+}
 
   bool itemExists(dynamic item) {
     return state.any(

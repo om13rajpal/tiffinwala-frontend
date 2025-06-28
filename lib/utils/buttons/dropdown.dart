@@ -33,7 +33,7 @@ class _DrowdpwnState extends ConsumerState<CustomDrowdpwn> {
                       .map(
                         (e) => SelectItemButton(
                           value: e,
-                          child: Text(e, style: const TextStyle(fontSize: 10)),
+                          child: Text(e, style: const TextStyle(fontSize: 12.5)),
                         ),
                       )
                       .toList(),

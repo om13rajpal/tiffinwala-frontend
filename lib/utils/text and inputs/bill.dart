@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'package:tiffinwala/providers/cart.dart';
 import 'package:tiffinwala/providers/coupon.dart';
+import 'package:tiffinwala/providers/discount.dart';
 
 class Bill extends ConsumerStatefulWidget {
   const Bill({super.key});
@@ -10,134 +12,108 @@ class Bill extends ConsumerStatefulWidget {
   ConsumerState<Bill> createState() => _BillState();
 }
 
-double total = 0.0;
-
 class _BillState extends ConsumerState<Bill> {
   @override
   Widget build(BuildContext context) {
     ref.watch(couponProvider);
     ref.watch(cartProvider);
 
-    final discount = ref.watch(couponProvider.select((c) => c.discount));
-    total = ref.watch(
-      cartProvider.notifier.select((cart) => cart.getTotalPrice(discount)),
+    final discountState = ref.watch(discountProvider);
+    final loyaltyDiscount = discountState.loyaltyDiscount;
+    final couponDiscount = discountState.couponDiscount;
+
+    final total = ref.watch(
+      cartProvider.notifier.select((cart) => cart.getNormalTotalPrice()),
     );
 
-    return Column(
-      spacing: 2,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              'Total Price',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 12.5,
-                color: const Color.fromARGB(255, 212, 212, 212),
+    final cgst = total * 0.025;
+    final sgst = total * 0.025;
+    const deliveryCharges = 20.0;
+
+    final amountPayable = total + cgst + sgst + deliveryCharges;
+
+    return Container(
+      width: MediaQuery.of(context).size.width,
+      padding: EdgeInsets.symmetric(horizontal: 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        color: const Color.fromARGB(255, 33, 33, 33),
+      ),
+      child: shadcn.Accordion(
+        items: [
+          shadcn.AccordionItem(
+            trigger: shadcn.AccordionTrigger(
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text('Total bill amount'),
+                  Text('₹ ${amountPayable.toStringAsFixed(2)}'),
+                ],
               ),
             ),
-            Text(
-              total.toString(),
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 12,
-                color: const Color.fromARGB(255, 184, 184, 184),
-              ),
+            content: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _buildRow('Total Price', total.toStringAsFixed(2)),
+                if (loyaltyDiscount > 0)
+                  _buildRow(
+                    'Loyalty Discount',
+                    '- ${loyaltyDiscount.toStringAsFixed(2)}',
+                  ),
+                if (couponDiscount > 0)
+                  _buildRow(
+                    'Promotional Discount',
+                    '- ${couponDiscount.toStringAsFixed(2)}',
+                  ),
+                _buildRow('CGST (2.5%)', cgst.toStringAsFixed(2)),
+                _buildRow('SGST (2.5%)', sgst.toStringAsFixed(2)),
+                _buildRow(
+                  'Delivery Charges',
+                  deliveryCharges.toStringAsFixed(2),
+                ),
+                Divider(
+                  color: const Color.fromARGB(255, 89, 89, 89),
+                  thickness: 0.5,
+                ),
+                _buildRow(
+                  'Amount Payable',
+                  amountPayable.toStringAsFixed(2),
+                  isHighlight: true,
+                ),
+              ],
             ),
-          ],
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              'CGST (2.5%)',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 12.5,
-                color: const Color.fromARGB(255, 212, 212, 212),
-              ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildRow(String label, String value, {bool isHighlight = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4.0),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontWeight: isHighlight ? FontWeight.w700 : FontWeight.w600,
+              fontSize: isHighlight ? 14 : 12.5,
+              color: const Color.fromARGB(255, 212, 212, 212),
             ),
-            Text(
-              (total * 0.025).toStringAsFixed(2),
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 12,
-                color: const Color.fromARGB(255, 184, 184, 184),
-              ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontWeight: isHighlight ? FontWeight.w600 : FontWeight.w500,
+              fontSize: isHighlight ? 13 : 12,
+              color: const Color.fromARGB(255, 184, 184, 184),
             ),
-          ],
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              'SGST (2.5%)',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 12.5,
-                color: const Color.fromARGB(255, 212, 212, 212),
-              ),
-            ),
-            Text(
-              (total * 0.025).toStringAsFixed(2),
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 12,
-                color: const Color.fromARGB(255, 184, 184, 184),
-              ),
-            ),
-          ],
-        ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              'Delivery Charges',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 12.5,
-                color: const Color.fromARGB(255, 212, 212, 212),
-              ),
-            ),
-            Text(
-              '20',
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 12,
-                color: const Color.fromARGB(255, 184, 184, 184),
-              ),
-            ),
-          ],
-        ),
-        Divider(color: const Color.fromARGB(255, 49, 49, 49), thickness: 0.5),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          crossAxisAlignment: CrossAxisAlignment.center,
-          children: [
-            Text(
-              'Amount Payable',
-              style: TextStyle(
-                fontWeight: FontWeight.w600,
-                fontSize: 13.5,
-                color: const Color.fromARGB(255, 212, 212, 212),
-              ),
-            ),
-            Text(
-              total.toString(),
-              style: TextStyle(
-                fontWeight: FontWeight.w500,
-                fontSize: 12.5,
-                color: const Color.fromARGB(255, 184, 184, 184),
-              ),
-            ),
-          ],
-        ),
-      ],
+          ),
+        ],
+      ),
     );
   }
 }

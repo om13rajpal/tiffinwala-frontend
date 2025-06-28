@@ -305,7 +305,6 @@ class _ProfileState extends ConsumerState<Profile> {
                       return Details(
                         title: details[index],
                         detail: detailsValue[index],
-                        badge: 'Verified',
                       );
                     }),
                   ),
@@ -347,6 +346,41 @@ class _ProfileState extends ConsumerState<Profile> {
                   ),
                 ),
               ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 25,
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: material.Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Image.asset('assets/logo_dark.png', fit: BoxFit.contain, width: 100, height: 100,),
+                  ],
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(height: 5,),
+              ),
+              SliverToBoxAdapter(
+                child: material.Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Image.asset('assets/icons/fssai.png', fit: BoxFit.contain, width: 60,),
+                  ],
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: material.Padding(
+                  padding: const EdgeInsets.only(left: 10),
+                  child: Text('LIC NO. 2301923745896', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: const material.Color.fromARGB(255, 86, 86, 86)),),
+                ),
+              ),
+              SliverToBoxAdapter(
+                child: SizedBox(
+                  height: 20,
+                ),
+              )
             ],
           ),
         ),

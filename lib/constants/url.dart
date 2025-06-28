@@ -1,3 +1,3 @@
 class BaseUrl {
-  static const String url = "https://tiffinwala-backend-eta.vercel.app";
+  static const String url = "https://api.tiffinwala.services";
 }

@@ -1,24 +1,45 @@
-import 'package:shadcn_flutter/shadcn_flutter.dart';
+import 'dart:convert';
+import 'dart:developer';
 
-class PosterCarousel extends StatefulWidget {
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart';
+import 'package:http/http.dart' as http;
+import 'package:tiffinwala/constants/url.dart';
+import 'package:tiffinwala/providers/banner.dart';
+
+class PosterCarousel extends ConsumerStatefulWidget {
   const PosterCarousel({super.key});
 
   @override
-  State<PosterCarousel> createState() => _PosterCarouselState();
+  ConsumerState<PosterCarousel> createState() => _PosterCarouselState();
 }
 
-List<String> _posters = [
-  'assets/1.png',
-  'assets/2.png',
-  'assets/3.png',
-  'assets/1.png',
-  'assets/2.png',
-];
+Future<void> getBanners(WidgetRef ref) async {
+  try {
+    final response = await http.get(Uri.parse("${BaseUrl.url}/banner"));
+    if (response.statusCode == 200) {
+      final jsonRes = await jsonDecode(response.body);
+      List<dynamic> banners = jsonRes['data'].map((banner) => banner['url']).toList();
+      ref.read(bannerProvider.notifier).state = banners;
+    }
+  } catch (e) {
+    log(e.toString());
+  }
+}
 
-class _PosterCarouselState extends State<PosterCarousel> {
+class _PosterCarouselState extends ConsumerState<PosterCarousel> {
+  @override
+  void initState() {
+    getBanners(ref);
+    super.initState();
+  }
+
   final CarouselController controller = CarouselController();
+  List<dynamic> _posters = [];
+
   @override
   Widget build(BuildContext context) {
+    _posters = ref.watch(bannerProvider);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: SizedBox(
@@ -28,7 +49,7 @@ class _PosterCarouselState extends State<PosterCarousel> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             SizedBox(
-              height: 190,
+              height: (MediaQuery.of(context).size.width - 24) * (270 / 400),
               child: Carousel(
                 transition: const CarouselTransition.fading(),
                 controller: controller,
@@ -38,7 +59,7 @@ class _PosterCarouselState extends State<PosterCarousel> {
                 itemBuilder: (context, index) {
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(20),
-                    child: Image.asset(_posters[index], fit: BoxFit.cover),
+                    child: Image.network(_posters[index], fit: BoxFit.cover),
                   );
                 },
                 duration: const Duration(seconds: 1),
@@ -56,7 +77,7 @@ class _PosterCarouselState extends State<PosterCarousel> {
                     size: ButtonSize.xSmall,
                     onPressed: () {
                       controller.animatePrevious(
-                        const Duration(milliseconds: 500),
+                        const Duration(milliseconds: 800),
                       );
                     },
                     child: const Icon(Icons.arrow_back),

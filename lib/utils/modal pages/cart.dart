@@ -63,20 +63,6 @@ SliverWoltModalSheetPage cart(
               ),
             ),
             Bill(),
-            Container(
-              height: 0.8,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                border: DashedBorder.fromBorderSide(
-                  side: const BorderSide(
-                    color: Color.fromARGB(255, 179, 179, 179),
-                    width: 0.2,
-                  ),
-                  dashLength: 2.5,
-                  spaceLength: 3,
-                ),
-              ),
-            ),
             SizedBox(height: 100),
           ],
         ),

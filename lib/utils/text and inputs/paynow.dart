@@ -1,5 +1,4 @@
 import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
@@ -7,9 +6,7 @@ import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/constants/url.dart';
 import 'package:tiffinwala/providers/cart.dart';
 import 'package:tiffinwala/providers/coupon.dart';
-import 'package:tiffinwala/providers/loyalty.dart';
-import 'package:tiffinwala/providers/points.dart';
-import 'package:tiffinwala/screens/menu.dart';
+import 'package:tiffinwala/providers/discount.dart';
 import 'package:tiffinwala/screens/payment.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/buttons/checkbox.dart';
@@ -25,20 +22,17 @@ class Paynow extends ConsumerStatefulWidget {
   ConsumerState<Paynow> createState() => _PaynowState();
 }
 
-double totalPrice = 0.0;
-double loyaltyPrice = 0.0;
-bool usingLoyaltyPoints = false;
-late String usingCoupon;
-int discount = 0;
-
 TextEditingController coupon = TextEditingController();
 
 class _PaynowState extends ConsumerState<Paynow> {
   void handleCheckbox(bool isChecked) {
-    ref.read(isUsingLoyaltyProvider.notifier).setLoading(isChecked);
-    setState(() {
-      usingLoyaltyPoints = isChecked;
-    });
+    if (isChecked) {
+      ref
+          .read(discountProvider.notifier)
+          .setLoyaltyDiscount(widget.loyaltyPoints.toDouble());
+    } else {
+      ref.read(discountProvider.notifier).setLoyaltyDiscount(0.0);
+    }
   }
 
   void verifyCoupon() async {
@@ -49,43 +43,43 @@ class _PaynowState extends ConsumerState<Paynow> {
       body: jsonEncode(body),
       headers: {"Content-Type": "application/json"},
     );
-    final jsonRes = await jsonDecode(response.body);
+
+    final jsonRes = jsonDecode(response.body);
+
     if (response.statusCode == 200) {
-      usingCoupon = coupon.text.trim();
-      ref.read(couponProvider.notifier).setCoupon(discount);
-      setState(() {
-        final dis = jsonRes["data"]["discount"];
-        discount = dis;
-      });
+      final dis = jsonRes["data"]["discount"].toDouble();
+
+      ref.read(discountProvider.notifier).setCouponDiscount(dis);
+      ref.read(couponProvider.notifier).setCoupon(dis.toInt());
+      setState(() {});
     }
   }
 
-  void removeCoupon() async {
+  void removeCoupon() {
+    ref.read(discountProvider.notifier).setCouponDiscount(0.0);
     ref.read(couponProvider.notifier).reset();
-    discount = 0;
     coupon.clear();
     setState(() {});
   }
 
   @override
   Widget build(BuildContext context) {
-    loyaltyPoints = ref.watch(setPointsProvider);
-    List<CartItems> cartItems = ref.watch(cartProvider);
+    final discountState = ref.watch(discountProvider);
     final couponUsed = ref.watch(couponProvider).verified;
 
-    totalPrice = ref.watch(
-      cartProvider.notifier.select((cart) => cart.getTotalPrice(discount)),
+    List<CartItems> cartItems = ref.watch(cartProvider);
+
+    final totalPayable = ref.watch(
+      cartProvider.notifier.select(
+        (cart) => cart.getPayableAmount(
+          discountState.couponDiscount,
+          discountState.loyaltyDiscount,
+        ),
+      ),
     );
 
-    loyaltyPrice =
-        ref.watch(
-          cartProvider.notifier.select((cart) => cart.getTotalPrice(discount)),
-        ) -
-        widget.loyaltyPoints;
+    final loyaltyApplied = discountState.loyaltyDiscount > 0;
 
-    if (loyaltyPrice < 0) {
-      loyaltyPrice = 0;
-    }
 
     return Column(
       spacing: 10,
@@ -98,8 +92,8 @@ class _PaynowState extends ConsumerState<Paynow> {
                 height: 35,
                 child: TextField(
                   controller:
-                      (couponUsed)
-                          ? TextEditingController(text: usingCoupon)
+                      couponUsed
+                          ? TextEditingController(text: coupon.text)
                           : coupon,
                   readOnly: couponUsed,
                   style: TextStyle(
@@ -125,15 +119,13 @@ class _PaynowState extends ConsumerState<Paynow> {
                     ),
                     prefixIcon: Icon(LucideIcons.badgePercent, size: 16),
                     suffixIcon:
-                        (couponUsed)
+                        couponUsed
                             ? InkWell(
-                              onTap: () => removeCoupon(),
+                              onTap: removeCoupon,
                               child: Icon(LucideIcons.x, size: 16),
                             )
                             : InkWell(
-                              onTap: () {
-                                verifyCoupon();
-                              },
+                              onTap: verifyCoupon,
                               child: Icon(LucideIcons.chevronRight, size: 16),
                             ),
                   ),
@@ -150,10 +142,8 @@ class _PaynowState extends ConsumerState<Paynow> {
                   child: Row(
                     children: [
                       TiffinCheckbox(
-                        preChecked: false,
-                        onChanged: (isChecked) {
-                          handleCheckbox(isChecked);
-                        },
+                        preChecked: loyaltyApplied,
+                        onChanged: handleCheckbox,
                       ),
                       Text(
                         '₹${widget.loyaltyPoints} off',
@@ -184,9 +174,7 @@ class _PaynowState extends ConsumerState<Paynow> {
                   ),
                 ),
                 Text(
-                  (usingLoyaltyPoints)
-                      ? '₹ ${loyaltyPrice.toStringAsFixed(2)}'
-                      : '₹ ${totalPrice.toStringAsFixed(2)}',
+                  '₹ ${totalPayable.toStringAsFixed(2)}',
                   style: TextStyle(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w500,
