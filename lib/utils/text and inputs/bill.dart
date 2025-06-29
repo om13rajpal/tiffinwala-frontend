@@ -47,8 +47,8 @@ class _BillState extends ConsumerState<Bill> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text('Total bill amount'),
-                  Text('₹ ${amountPayable.toStringAsFixed(2)}'),
+                  Text('Total bill amount', style: TextStyle(fontSize: 14),),
+                  Text('₹ ${amountPayable.toStringAsFixed(2)}', style: TextStyle(fontSize: 14),),
                 ],
               ),
             ),

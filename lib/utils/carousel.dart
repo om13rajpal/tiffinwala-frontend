@@ -19,7 +19,8 @@ Future<void> getBanners(WidgetRef ref) async {
     final response = await http.get(Uri.parse("${BaseUrl.url}/banner"));
     if (response.statusCode == 200) {
       final jsonRes = await jsonDecode(response.body);
-      List<dynamic> banners = jsonRes['data'].map((banner) => banner['url']).toList();
+      List<dynamic> banners =
+          jsonRes['data'].map((banner) => banner['url']).toList();
       ref.read(bannerProvider.notifier).state = banners;
     }
   } catch (e) {

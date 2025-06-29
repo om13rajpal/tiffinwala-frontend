@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart' as material;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart' as lucide;
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/constants/veg.dart';
@@ -9,6 +8,7 @@ import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/buttons/checkbox.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/gradientext.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart' as lucide;
 
 class ItemDetails extends ConsumerStatefulWidget {
   final int price;
