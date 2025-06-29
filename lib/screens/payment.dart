@@ -32,7 +32,6 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
     final selectedPayment = ref.watch(selectedPaymentProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF1C1C1C),
       body: SafeArea(
         child: Column(
           children: [
@@ -116,37 +115,65 @@ class _PaymentPageState extends ConsumerState<PaymentPage> {
                 ],
               ),
             ),
-            Container(
-              color: const Color(0xFF212121),
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-              child: ElevatedButton(
-                onPressed:
-                    selectedPayment != null
-                        ? () {
-                          if (selectedPayment == 'Cash on Delivery') {
-                            widget.cod?.call();
-                          } else {
-                            widget.openCheckout?.call(selectedPayment);
-                          }
-                        }
-                        : null,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF285531),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
+            SizedBox(
+              height: 100,
+              child: Stack(
+                children: [
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.bottomCenter,
+                          end: Alignment.topCenter,
+                          colors: [
+                            Color(0xFF000000),
+                            Colors.transparent,
+                          ],
+                          stops: [0.0, 0.2],
+                        ),
+                      ),
+                    ),
                   ),
-                  minimumSize: Size(double.infinity, 50),
-                ),
-                child: Text(
-                  selectedPayment != null
-                      ? 'Pay with $selectedPayment'
-                      : 'Select a Payment Method',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: Colors.white,
+                  Positioned.fill(
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 15,
+                        ),
+                        child: ElevatedButton(
+                          onPressed: selectedPayment != null
+                              ? () {
+                                  if (selectedPayment == 'Cash on Delivery') {
+                                    widget.cod?.call();
+                                  } else {
+                                    widget.openCheckout?.call(selectedPayment);
+                                  }
+                                }
+                              : null,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF285531),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(15),
+                            ),
+                            minimumSize: Size(double.infinity, 50),
+                          ),
+                          child: Text(
+                            selectedPayment != null
+                                ? 'Pay with $selectedPayment'
+                                : 'Select a Payment Method',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 14,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ],

@@ -22,15 +22,18 @@ class _BillState extends ConsumerState<Bill> {
     final loyaltyDiscount = discountState.loyaltyDiscount;
     final couponDiscount = discountState.couponDiscount;
 
-    final total = ref.watch(
+    final subtotal = ref.watch(
       cartProvider.notifier.select((cart) => cart.getNormalTotalPrice()),
     );
 
-    final cgst = total * 0.025;
-    final sgst = total * 0.025;
+    double discountedSubtotal = subtotal - loyaltyDiscount - couponDiscount;
+    if (discountedSubtotal < 0) discountedSubtotal = 0;
+
+    final cgst = discountedSubtotal * 0.025;
+    final sgst = discountedSubtotal * 0.025;
     const deliveryCharges = 20.0;
 
-    final amountPayable = total + cgst + sgst + deliveryCharges;
+    final amountPayable = discountedSubtotal + cgst + sgst + deliveryCharges;
 
     return Container(
       width: MediaQuery.of(context).size.width,
@@ -47,15 +50,18 @@ class _BillState extends ConsumerState<Bill> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text('Total bill amount', style: TextStyle(fontSize: 14),),
-                  Text('₹ ${amountPayable.toStringAsFixed(2)}', style: TextStyle(fontSize: 14),),
+                  Text('Total bill amount', style: TextStyle(fontSize: 14)),
+                  Text(
+                    '₹ ${amountPayable.toStringAsFixed(2)}',
+                    style: TextStyle(fontSize: 14),
+                  ),
                 ],
               ),
             ),
             content: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildRow('Total Price', total.toStringAsFixed(2)),
+                _buildRow('Total Price', subtotal.toStringAsFixed(2)),
                 if (loyaltyDiscount > 0)
                   _buildRow(
                     'Loyalty Discount',

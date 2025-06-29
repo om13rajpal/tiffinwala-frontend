@@ -4,6 +4,7 @@ import 'dart:developer';
 import 'package:flutter/material.dart' as material;
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:lottie/lottie.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart' as lucide;
 import 'package:razorpay_flutter/razorpay_flutter.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
@@ -21,6 +22,7 @@ import 'package:tiffinwala/providers/ismenuloaded.dart';
 import 'package:tiffinwala/providers/loyalty.dart';
 import 'package:tiffinwala/providers/ordermode.dart';
 import 'package:tiffinwala/providers/points.dart';
+import 'package:tiffinwala/providers/status.dart';
 import 'package:tiffinwala/screens/success.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/category.dart';
@@ -248,7 +250,7 @@ class _MenuState extends ConsumerState<Menu> {
       'paymentStatus': 'completed',
       'paymentMethod': 'razorpay',
       'orderMode': orderMode.toLowerCase(),
-      'discount': discount,
+      'discount': couponDiscount + loyaltyDiscount,
     };
 
     var res = await http.post(
@@ -271,6 +273,7 @@ class _MenuState extends ConsumerState<Menu> {
 
       var jsonRes = jsonDecode(res.body);
 
+        print(jsonRes);
       if (jsonRes['status']) {
         ref.read(cartProvider.notifier).clearCart();
         if (!mounted) return;
@@ -281,7 +284,9 @@ class _MenuState extends ConsumerState<Menu> {
           if (!mounted) return;
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => Success()),
+            MaterialPageRoute(
+              builder: (context) => Success(id: jsonRes['data']['_id']),
+            ),
           );
         });
       }
@@ -364,7 +369,9 @@ class _MenuState extends ConsumerState<Menu> {
           if (!mounted) return;
           Navigator.push(
             context,
-            MaterialPageRoute(builder: (context) => Success()),
+            MaterialPageRoute(
+              builder: (context) => Success(id: jsonRes['data']['_id']),
+            ),
           );
         });
       }
@@ -428,6 +435,19 @@ class _MenuState extends ConsumerState<Menu> {
     });
   }
 
+  Future<void> checkStoreStatus() async {
+    try {
+      final response = await http.get(Uri.parse("${BaseUrl.url}/store/status"));
+      final jsonRes = await jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        ref.read(statusProvider.notifier).state =
+            (jsonRes['store'] == 'Active');
+      }
+    } catch (e) {
+      log(e.toString());
+    }
+  }
+
   @override
   void initState() {
     initData();
@@ -436,7 +456,7 @@ class _MenuState extends ConsumerState<Menu> {
     _razorpay.on(Razorpay.EVENT_PAYMENT_SUCCESS, _handlePaymentSuccess);
     _razorpay.on(Razorpay.EVENT_PAYMENT_ERROR, _handlePaymentError);
     _razorpay.on(Razorpay.EVENT_EXTERNAL_WALLET, _handleExternalWallet);
-
+    checkStoreStatus();
     super.initState();
   }
 
@@ -479,6 +499,8 @@ class _MenuState extends ConsumerState<Menu> {
     double price = ref.watch(
       cartProvider.notifier.select((cart) => cart.getNormalTotalPrice()),
     );
+
+    bool open = ref.watch(statusProvider);
 
     return material.Scaffold(
       floatingActionButtonLocation: CustomFabLocation(),
@@ -581,7 +603,7 @@ class _MenuState extends ConsumerState<Menu> {
                     SliverToBoxAdapter(child: SizedBox(height: 7)),
                     SliverToBoxAdapter(child: searchBar(context)),
                     SliverToBoxAdapter(child: SizedBox(height: 7)),
-                    SliverToBoxAdapter(child: tiffinMenu(context)),
+                    SliverToBoxAdapter(child: tiffinMenu(context, open)),
                     SliverToBoxAdapter(child: SizedBox(height: 20)),
                     SliverToBoxAdapter(
                       child: material.Column(
@@ -727,7 +749,7 @@ class _MenuState extends ConsumerState<Menu> {
   }
 
   // Tiffin menu container
-  material.Container tiffinMenu(material.BuildContext context) {
+  material.Container tiffinMenu(material.BuildContext context, bool open) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 3),
       decoration: BoxDecoration(
@@ -749,7 +771,13 @@ class _MenuState extends ConsumerState<Menu> {
         child: Padding(
           padding: EdgeInsets.all(5),
           child:
-              (isLoading)
+              (!open)
+                  ? LottieBuilder.asset(
+                    'assets/lottie/closed.json',
+                    width: MediaQuery.of(context).size.width,
+                    renderCache: RenderCache.raster,
+                  )
+                  : (isLoading)
                   ? Skeletonizer(
                     containersColor: AppColors.accent,
                     enableSwitchAnimation: true,

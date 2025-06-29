@@ -87,9 +87,6 @@ class _TiffinwalaState extends ConsumerState<Tiffinwala> {
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       if (!mounted) return;
       if (message.notification != null) {
-        print(message.notification!.title);
-        print(message.notification!.body);
-
         flutterLocalNotificationsPlugin.show(
           message.notification.hashCode,
           message.notification!.title,
