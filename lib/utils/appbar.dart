@@ -3,6 +3,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart' as lucide_flutter;
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:tiffinwala/constants/colors.dart';
 import 'package:tiffinwala/screens/profile.dart';
+import 'package:tiffinwala/screens/scanner.dart';
 
 class TiffinAppBar extends StatefulWidget {
   final bool centerTitle;
@@ -59,6 +60,21 @@ class _TiffinAppBarState extends State<TiffinAppBar> {
           (widget.centerTitle)
               ? null
               : [
+                material.IconButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => UserScannerScreen(),
+                      ),
+                    );
+                  },
+                  icon: lucide_flutter.LucideIconWidget(
+                    icon: lucide_flutter.LucideIcons.qrCode,
+                    size: 13,
+                    color: AppColors.icon,
+                  ),
+                ),
                 material.IconButton(
                   onPressed: () {
                     Navigator.push(

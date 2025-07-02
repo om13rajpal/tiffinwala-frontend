@@ -43,15 +43,6 @@ class Menu extends ConsumerStatefulWidget {
   ConsumerState<Menu> createState() => _MenuState();
 }
 
-class CustomFabLocation extends material.FloatingActionButtonLocation {
-  @override
-  Offset getOffset(material.ScaffoldPrelayoutGeometry scaffoldGeometry) {
-    final double x = scaffoldGeometry.scaffoldSize.width - 75;
-    final double y = scaffoldGeometry.scaffoldSize.height - 68;
-    return Offset(x, y);
-  }
-}
-
 // list declarations
 List<dynamic> categories = [];
 List<dynamic> items = [];
@@ -273,7 +264,6 @@ class _MenuState extends ConsumerState<Menu> {
 
       var jsonRes = jsonDecode(res.body);
 
-        print(jsonRes);
       if (jsonRes['status']) {
         ref.read(cartProvider.notifier).clearCart();
         if (!mounted) return;
@@ -503,36 +493,6 @@ class _MenuState extends ConsumerState<Menu> {
     bool open = ref.watch(statusProvider);
 
     return material.Scaffold(
-      floatingActionButtonLocation: CustomFabLocation(),
-      floatingActionButton: material.FloatingActionButton(
-        backgroundColor: const material.Color.fromARGB(
-          255,
-          22,
-          22,
-          22,
-        ).withAlpha(250),
-        child: lucide.LucideIconWidget(
-          icon: lucide.LucideIcons.utensils,
-          size: 16,
-          color: const material.Color.fromARGB(255, 178, 178, 178),
-        ),
-        onPressed: () {
-          WoltModalSheet.show(
-            context: context,
-            modalTypeBuilder: (context) => WoltModalType.dialog(),
-            pageListBuilder: (context) {
-              return [
-                menuPopUp(
-                  context,
-                  categories,
-                  categoryItems,
-                  _scrollToCategory,
-                ),
-              ];
-            },
-          );
-        },
-      ),
       body: SafeArea(
         child: DrawerOverlay(
           child: Stack(
@@ -601,8 +561,6 @@ class _MenuState extends ConsumerState<Menu> {
                     SliverToBoxAdapter(child: SizedBox(height: 10)),
                     SliverToBoxAdapter(child: CouponCode()),
                     SliverToBoxAdapter(child: SizedBox(height: 7)),
-                    SliverToBoxAdapter(child: searchBar(context)),
-                    SliverToBoxAdapter(child: SizedBox(height: 7)),
                     SliverToBoxAdapter(child: tiffinMenu(context, open)),
                     SliverToBoxAdapter(child: SizedBox(height: 20)),
                     SliverToBoxAdapter(
@@ -661,6 +619,31 @@ class _MenuState extends ConsumerState<Menu> {
                     duration: 500.ms,
                     curve: Curves.elasticOut,
                   ),
+              Positioned(
+                bottom: 0,
+                child: Container(
+                      decoration: BoxDecoration(
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(20),
+                          topRight: Radius.circular(20),
+                        ),
+                      ),
+                      width: MediaQuery.of(context).size.width,
+                      height: 80,
+                      child: material.Center(child: searchBar(context)),
+                    )
+                    .animate(
+                      target: cartItems.isNotEmpty ? 1 : 0,
+                      key: ValueKey(cartItems.isNotEmpty),
+                    )
+                    .move(
+                      duration: 500.ms,
+                      curve: Curves.elasticOut,
+                      begin: Offset(0, 0),
+                      end: Offset(0, -59),
+                    ),
+              ),
             ],
           ),
         ),
@@ -675,23 +658,15 @@ class _MenuState extends ConsumerState<Menu> {
     material.BuildContext context,
   ) {
     return Positioned(
-      bottom: 10,
-      left: 0,
+      bottom: 0,
       child: Visibility(
         visible: cartItems.isNotEmpty,
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 15),
-          margin: const EdgeInsets.symmetric(horizontal: 20),
-          height: 58,
-          width: MediaQuery.of(context).size.width * 0.7,
+          height: 60,
+          width: MediaQuery.of(context).size.width,
           decoration: BoxDecoration(
-            color: const material.Color.fromARGB(
-              255,
-              22,
-              22,
-              22,
-            ).withAlpha(250),
-            borderRadius: BorderRadius.circular(15),
+                        color: AppColors.primary,
           ),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -797,16 +772,26 @@ class _MenuState extends ConsumerState<Menu> {
                       child: Column(
                         children: List.generate(7, (index) {
                           return material.Padding(
-                            padding: const EdgeInsets.only(bottom: 10),
+                            padding: const EdgeInsets.only(bottom: 15, left: 15, right: 20),
                             child: material.Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              crossAxisAlignment: CrossAxisAlignment.center,
                               children: [
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text('Spring roll combination'),
                                     Text('879 ka hai ye'),
+                                    Text('879 ka hai ye'),
                                   ],
                                 ),
+                                ClipRRect(borderRadius: BorderRadius.circular(12),child: SizedBox(
+                                  width: 80,
+                                  height: 80,
+                                  child: Image.asset('assets/logo.png', fit: BoxFit.cover, width: 80,),
+                                ),
+                                  
+                                )
                               ],
                             ),
                           );
@@ -888,6 +873,52 @@ class _MenuState extends ConsumerState<Menu> {
                   borderSide: BorderSide.none,
                 ),
                 prefixIcon: Icon(lucide.LucideIcons.search, size: 16),
+              ),
+            ),
+          ),
+          GestureDetector(
+            onTap: () {
+              WoltModalSheet.show(
+                context: context,
+                modalTypeBuilder: (context) => WoltModalType.dialog(),
+                pageListBuilder: (context) {
+                  return [
+                    menuPopUp(
+                      context,
+                      categories,
+                      categoryItems,
+                      _scrollToCategory,
+                    ),
+                  ];
+                },
+              );
+            },
+            child: Container(
+              width: 80,
+              height: 35,
+              decoration: BoxDecoration(
+                color: AppColors.accent,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                spacing: 5,
+                mainAxisAlignment: MainAxisAlignment.center,
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    'Menu',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w400,
+                      color: AppColors.secondary.withAlpha(200),
+                    ),
+                  ),
+                  lucide.LucideIconWidget(
+                    icon: lucide.LucideIcons.utensils,
+                    size: 13,
+                    color: AppColors.secondary.withAlpha(200),
+                  ),
+                ],
               ),
             ),
           ),

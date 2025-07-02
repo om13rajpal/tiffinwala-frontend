@@ -6,6 +6,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:http/http.dart' as http;
 import 'package:tiffinwala/constants/url.dart';
 import 'package:tiffinwala/providers/banner.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class PosterCarousel extends ConsumerStatefulWidget {
   const PosterCarousel({super.key});
@@ -21,6 +22,13 @@ Future<void> getBanners(WidgetRef ref) async {
       final jsonRes = await jsonDecode(response.body);
       List<dynamic> banners =
           jsonRes['data'].map((banner) => banner['url']).toList();
+
+      List<dynamic> bannerLink =
+          jsonRes['data'].map((banner) {
+            return banner['redirect'] ?? "";
+          }).toList();
+
+      ref.read(bannerLinkProvider.notifier).state = bannerLink;
       ref.read(bannerProvider.notifier).state = banners;
     }
   } catch (e) {
@@ -35,12 +43,25 @@ class _PosterCarouselState extends ConsumerState<PosterCarousel> {
     super.initState();
   }
 
+  Future<void> _openUrl(String url) async {
+    if (url.isEmpty) return;
+
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.inAppWebView);
+    } else {
+      log("Could not launch $url");
+    }
+  }
+
   final CarouselController controller = CarouselController();
   List<dynamic> _posters = [];
+  List<dynamic> postersLink = [];
 
   @override
   Widget build(BuildContext context) {
     _posters = ref.watch(bannerProvider);
+    postersLink = ref.watch(bannerLinkProvider);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12),
       child: SizedBox(
@@ -60,7 +81,13 @@ class _PosterCarouselState extends ConsumerState<PosterCarousel> {
                 itemBuilder: (context, index) {
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(20),
-                    child: Image.network(_posters[index], fit: BoxFit.cover),
+                    child: GestureDetector(
+                      onTap: () {
+                        final url = postersLink[index];
+                        _openUrl(url);
+                      },
+                      child: Image.network(_posters[index], fit: BoxFit.cover),
+                    ),
                   );
                 },
                 duration: const Duration(seconds: 1),

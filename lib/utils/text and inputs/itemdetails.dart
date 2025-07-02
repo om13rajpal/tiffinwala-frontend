@@ -55,174 +55,219 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
     final itemExists = counter > 0;
 
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      padding: EdgeInsets.only(left: 10, right: 10, top: 7, bottom: 20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: 3,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              (widget.item['itemTagIds'][0] == Classification.veg)
-                  ? Image.asset(
-                    'assets/icons/veg.png',
-                    width: 11,
-                    fit: BoxFit.cover,
-                  )
-                  : Image.asset(
-                    'assets/icons/nonveg.png',
-                    width: 11,
-                    fit: BoxFit.cover,
-                  ),
-              SizedBox(width: 5),
-              (widget.index == 0)
-                  ? Container(
-                    padding: EdgeInsets.only(
-                      left: 6,
-                      top: 1.5,
-                      bottom: 2.5,
-                      right: 6,
-                    ),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(5),
-                      color: Color(0xFFF78080),
-                    ),
-                    child: Center(
-                      child:
-                          (widget.index == 0)
-                              ? Text(
-                                'Best Seller',
-                                style: TextStyle(
-                                  fontSize: 8.5,
-                                  fontWeight: FontWeight.w700,
-                                  color: Color(0xFFB30000),
-                                  height: 0,
-                                ),
-                              )
-                              : null,
-                    ),
-                  )
-                  : Container(),
-            ],
-          ),
-          Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              SizedBox(
-                width: 150,
-                child: Text(
-                  widget.title,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    color:
-                        (widget.isCartItem)
-                            ? AppColors.secondary
-                            : AppColors.primary,
+              material.Column(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ItemType(widget: widget),
+                  SizedBox(height: 4),
+                  itemTitle(),
+                  SizedBox(height: 5),
+                  price(),
+                  SizedBox(height: 6),
+
+                  material.SizedBox(
+                    width: MediaQuery.of(context).size.width * 0.5,
+                    child: Text(
+                      maxLines: 2,
+                      'Lorem ipsum dolor sit amet, consectetur adipiscing elitSed do eiusmod tempor incididunt ut labore et dolore magna aliqua',
+                      style: TextStyle(
+                        overflow: TextOverflow.ellipsis,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                        color: const material.Color.fromARGB(255, 74, 74, 74),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
-              (itemExists)
-                  ? Container(
-                    width: 65,
-                    height: 28,
-                    padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(8),
-                      color: Color(0xFF3E3E3E),
+              material.Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Container(
+                      color: Colors.gray,
+                      width: 110,
+                      height: 110,
                     ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      spacing: 5,
-                      children: [
-                        GestureDetector(
-                          onTap:
-                              () => ref
-                                  .read(cartProvider.notifier)
-                                  .decrementCart(widget.item),
-                          child: lucide.LucideIconWidget(
-                            icon: LucideIcons.minus,
-                            size: 13,
-                          ),
-                        ),
-                        Text(
-                          '$counter',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                            color: AppColors.secondary,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap:
-                              () => ref
-                                  .read(cartProvider.notifier)
-                                  .incrementCart(widget.item),
-                          child: lucide.LucideIconWidget(
-                            icon: LucideIcons.plus,
-                            size: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )
-                  : SizedBox(
-                    width: 65,
-                    height: 28,
-                    child: material.ElevatedButton(
-                      style: material.ButtonStyle(
-                        backgroundColor: WidgetStatePropertyAll(
-                          Color(0xFF3E3E3E),
-                        ),
-                        padding: WidgetStatePropertyAll(
-                          EdgeInsets.symmetric(horizontal: 6),
-                        ),
-                        shape: WidgetStatePropertyAll(
-                          RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                        ),
-                      ),
-                      onPressed: () {
-                        selectedOptions.clear();
-                        WoltModalSheet.show(
-                          context: context,
-                          pageListBuilder: (context) {
-                            return [
-                              addOns(
-                                context,
-                                widget.optionSet,
-                                widget.item,
-                                ref,
-                              ),
-                            ];
-                          },
-                          modalTypeBuilder: (context) => WoltModalType.dialog(),
-                        );
-                      },
-                      child: Text(
-                        'ADD',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.secondary,
-                        ),
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    child: Transform.translate(
+                      offset: Offset(0, 10),
+                      child: Container(
+                        child:
+                            (itemExists)
+                                ? material.Center(child: countButton(counter))
+                                : material.Center(child: addButton(context)),
                       ),
                     ),
                   ),
+                ],
+              ),
             ],
-          ),
-          Text(
-            '₹ ${widget.price.toString()}',
-            style: TextStyle(
-              fontSize: 11.5,
-              fontWeight: FontWeight.w500,
-              color: Color(0xFF787878),
-            ),
           ),
         ],
       ),
+    );
+  }
+
+  material.Text price() {
+    return Text(
+      '₹ ${widget.price.toString()}',
+      style: TextStyle(
+        fontSize: 12,
+        fontWeight: FontWeight.w500,
+        color: material.Color.fromARGB(255, 22, 22, 22),
+      ),
+    );
+  }
+
+  material.SizedBox addButton(material.BuildContext context) {
+    return SizedBox(
+      width: 80,
+      height: 35,
+      child: material.ElevatedButton(
+        style: material.ButtonStyle(
+          backgroundColor: WidgetStatePropertyAll(Color(0xFF3E3E3E)),
+          padding: WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 6)),
+          shape: WidgetStatePropertyAll(
+            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          ),
+        ),
+        onPressed: () {
+          selectedOptions.clear();
+          WoltModalSheet.show(
+            context: context,
+            pageListBuilder: (context) {
+              return [addOns(context, widget.optionSet, widget.item, ref)];
+            },
+            modalTypeBuilder: (context) => WoltModalType.dialog(),
+          );
+        },
+        child: Text(
+          'ADD',
+          style: TextStyle(
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+            color: AppColors.secondary,
+          ),
+        ),
+      ),
+    );
+  }
+
+  material.Container countButton(int counter) {
+    return Container(
+      width: 80,
+      height: 35,
+      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(10),
+        color: Color(0xFF3E3E3E),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        spacing: 5,
+        children: [
+          GestureDetector(
+            onTap:
+                () =>
+                    ref.read(cartProvider.notifier).decrementCart(widget.item),
+            child: lucide.LucideIconWidget(icon: LucideIcons.minus, size: 13),
+          ),
+          Text(
+            '$counter',
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+              color: AppColors.secondary,
+            ),
+          ),
+          GestureDetector(
+            onTap:
+                () =>
+                    ref.read(cartProvider.notifier).incrementCart(widget.item),
+            child: lucide.LucideIconWidget(icon: LucideIcons.plus, size: 13),
+          ),
+        ],
+      ),
+    );
+  }
+
+  material.SizedBox itemTitle() {
+    return SizedBox(
+      width: 150,
+      child: Text(
+        widget.title,
+        style: TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: (widget.isCartItem) ? AppColors.secondary : AppColors.primary,
+        ),
+      ),
+    );
+  }
+}
+
+class ItemType extends material.StatelessWidget {
+  const ItemType({super.key, required this.widget});
+
+  final ItemDetails widget;
+
+  @override
+  material.Widget build(material.BuildContext context) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        (widget.item['itemTagIds'][0] == Classification.veg)
+            ? Image.asset('assets/icons/veg.png', width: 13, fit: BoxFit.cover)
+            : Image.asset(
+              'assets/icons/nonveg.png',
+              width: 13,
+              fit: BoxFit.cover,
+            ),
+        SizedBox(width: 5),
+        (widget.index == 0)
+            ? Container(
+              padding: EdgeInsets.only(
+                left: 6,
+                top: 1.5,
+                bottom: 2.5,
+                right: 6,
+              ),
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(5),
+                color: Color(0xFFF78080),
+              ),
+              child: Center(
+                child:
+                    (widget.index == 0)
+                        ? Text(
+                          'Best Seller',
+                          style: TextStyle(
+                            fontSize: 9.5,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFFB30000),
+                            height: 0,
+                          ),
+                        )
+                        : null,
+              ),
+            )
+            : Container(),
+      ],
     );
   }
 }
@@ -299,9 +344,7 @@ WoltModalSheetPage addOns(
                             Row(
                               children: [
                                 Text(
-                                  opt['price'] == 0
-                                      ? ''
-                                      : '+ ₹${opt['price']}',
+                                  opt['price'] == 0 ? '' : '+ ₹${opt['price']}',
                                   style: const TextStyle(
                                     fontSize: 12,
                                     fontWeight: FontWeight.w500,
