@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:tiffinwala/screens/success.dart';
 
 class UserPaymentScreen extends StatefulWidget {
   final String merchantId;
@@ -18,6 +20,9 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
   String amount = "";
   bool loading = false;
 
+  final Color tiffinWalaPurple = Color(0xFF780078);
+  final Color lighterPurple = Color(0xFFA02AA0);
+
   @override
   void initState() {
     super.initState();
@@ -30,7 +35,9 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
 
     if (phone.isNotEmpty) {
       final response = await http.get(
-        Uri.parse("http://localhost:5000/user/balance?phone=$phone"),
+        Uri.parse(
+          "https://merchant.tiffinwala.services/user/balance?phone=$phone",
+        ),
       );
 
       if (response.statusCode == 200) {
@@ -57,7 +64,7 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
   }
 
   Future<void> pay() async {
-    if (amount.isEmpty) {
+    if (amount.isEmpty || int.tryParse(amount) == 0) {
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text("Please enter an amount")));
@@ -67,7 +74,7 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
     setState(() => loading = true);
 
     final response = await http.post(
-      Uri.parse("http://localhost:5000/transaction"),
+      Uri.parse("https://merchant.tiffinwala.services/transaction"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "userPhone": phone,
@@ -81,10 +88,19 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
     final data = jsonDecode(response.body);
     if (!mounted) return;
     if (response.statusCode == 200) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(data["message"] ?? "Payment Successful")),
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder:
+              (_) => Success(
+                title: "Payment Successful",
+                message: data["message"] ?? "Your payment was successful.",
+                details: {
+                  "Merchant ID": widget.merchantId,
+                },
+              ),
+        ),
       );
-      Navigator.popUntil(context, (route) => route.isFirst);
     } else {
       ScaffoldMessenger.of(
         context,
@@ -94,44 +110,78 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
 
   @override
   Widget build(BuildContext context) {
+    bool payEnabled = amount.isNotEmpty && int.tryParse(amount) != 0;
+
     return Scaffold(
-      backgroundColor: Color(0xFFE91E63),
+      backgroundColor: tiffinWalaPurple,
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 24),
           child: Column(
             children: [
-              SizedBox(height: 40),
-              Text(
-                "Available Balance",
-                style: TextStyle(color: Colors.white, fontSize: 18),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  IconButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    icon: Icon(
+                      LucideIcons.arrowUpLeft,
+                      color: Colors.white,
+                      size: 22,
+                    ),
+                  ),
+                  Container(
+                    padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      border: Border.all(color: lighterPurple, width: 1),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Text(
+                      "Balance ₹$balance",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ),
+                ],
               ),
-              SizedBox(height: 8),
-              Text(
-                "₹$balance",
-                style: TextStyle(
-                  fontSize: 40,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+              SizedBox(height: 40),
+              Center(
+                child: Text(
+                  "₹${amount.isEmpty ? "0" : amount}",
+                  style: TextStyle(
+                    fontSize: 60,
+                    fontWeight: FontWeight.w600,
+                    color: Colors.white,
+                  ),
                 ),
               ),
-              SizedBox(height: 40),
-              Text(
-                "₹${amount.isEmpty ? "0" : amount}",
-                style: TextStyle(
-                  fontSize: 60,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
+              SizedBox(height: 20),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                decoration: BoxDecoration(
+                  color: lighterPurple.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(50),
+                ),
+                child: Text(
+                  "Merchant ID: ${widget.merchantId}",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
                 ),
               ),
-              SizedBox(height: 24),
+              SizedBox(height: 30),
               Expanded(
                 child: GridView.builder(
                   padding: EdgeInsets.zero,
                   gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                     crossAxisCount: 3,
-                    mainAxisSpacing: 16,
-                    crossAxisSpacing: 16,
+                    mainAxisSpacing: 5,
+                    crossAxisSpacing: 12,
                     childAspectRatio: 2,
                   ),
                   itemCount: 12,
@@ -147,26 +197,23 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
                       label = "<";
                     }
 
-                    return ElevatedButton(
-                      onPressed: () {
+                    return InkWell(
+                      onTap: () {
                         if (label == "<") {
                           deleteDigit();
                         } else if (label != ".") {
                           addDigit(label);
                         }
                       },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      child: Text(
-                        label,
-                        style: TextStyle(
-                          color: Color(0xFFE91E63),
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
+                      borderRadius: BorderRadius.circular(8),
+                      child: Center(
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16.5,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ),
                     );
@@ -175,24 +222,30 @@ class _UserPaymentScreenState extends State<UserPaymentScreen> {
               ),
               SizedBox(height: 24),
               loading
-                  ? CircularProgressIndicator(color: Colors.white)
+                  ? Center(
+                    child: CircularProgressIndicator(color: Colors.white),
+                  )
                   : SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
-                      onPressed: pay,
+                      onPressed: payEnabled ? pay : null,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
+                        elevation: payEnabled ? 2 : 0,
+                        backgroundColor:
+                            payEnabled
+                                ? Colors.white
+                                : Colors.white.withOpacity(0.3),
                         padding: EdgeInsets.symmetric(vertical: 16),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(8),
+                          borderRadius: BorderRadius.circular(12),
                         ),
                       ),
                       child: Text(
-                        "Pay",
+                        "Pay Now",
                         style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFFE91E63),
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                          color: payEnabled ? tiffinWalaPurple : Colors.white70,
                         ),
                       ),
                     ),

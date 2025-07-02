@@ -37,6 +37,12 @@ Future<void> getBanners(WidgetRef ref) async {
 }
 
 class _PosterCarouselState extends ConsumerState<PosterCarousel> {
+  final CarouselController controller = CarouselController();
+  List<dynamic> _posters = [];
+  List<dynamic> postersLink = [];
+
+  int currentIndex = 0;
+
   @override
   void initState() {
     getBanners(ref);
@@ -53,10 +59,6 @@ class _PosterCarouselState extends ConsumerState<PosterCarousel> {
       log("Could not launch $url");
     }
   }
-
-  final CarouselController controller = CarouselController();
-  List<dynamic> _posters = [];
-  List<dynamic> postersLink = [];
 
   @override
   Widget build(BuildContext context) {
@@ -76,17 +78,27 @@ class _PosterCarouselState extends ConsumerState<PosterCarousel> {
                 transition: const CarouselTransition.fading(),
                 controller: controller,
                 draggable: false,
-                autoplaySpeed: const Duration(seconds: 4),
+                autoplaySpeed: const Duration(seconds: 6),
                 itemCount: _posters.length,
+                onIndexChanged: (index) {
+                  setState(() {
+                    currentIndex = index;
+                  });
+                },
                 itemBuilder: (context, index) {
                   return ClipRRect(
                     borderRadius: BorderRadius.circular(20),
                     child: GestureDetector(
                       onTap: () {
-                        final url = postersLink[index];
+                        final url = postersLink.isNotEmpty
+                            ? postersLink[currentIndex]
+                            : "";
                         _openUrl(url);
                       },
-                      child: Image.network(_posters[index], fit: BoxFit.cover),
+                      child: Image.network(
+                        _posters[index],
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   );
                 },
@@ -114,9 +126,9 @@ class _PosterCarouselState extends ConsumerState<PosterCarousel> {
                   SizedBox(
                     width: MediaQuery.of(context).size.width * 0.6,
                     child: OverflowMarquee(
-                      duration: Duration(seconds: 4),
+                      duration: const Duration(seconds: 4),
                       fadePortion: 20,
-                      child: Text(
+                      child: const Text(
                         'No more boring meals – try our homestyle tiffin today & get 20% off your first order! Get your first tiffin at just ₹49 – homemade taste, delivered fresh to your doorstep!',
                         style: TextStyle(
                           fontSize: 10,
@@ -131,7 +143,9 @@ class _PosterCarouselState extends ConsumerState<PosterCarousel> {
                     shape: ButtonShape.circle,
                     size: ButtonSize.xSmall,
                     onPressed: () {
-                      controller.animateNext(const Duration(milliseconds: 500));
+                      controller.animateNext(
+                        const Duration(milliseconds: 500),
+                      );
                     },
                     child: const Icon(Icons.arrow_forward),
                   ),

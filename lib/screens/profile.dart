@@ -14,6 +14,7 @@ import 'package:tiffinwala/providers/firstname.dart';
 import 'package:tiffinwala/providers/lastname.dart';
 import 'package:tiffinwala/providers/nameloaded.dart';
 import 'package:tiffinwala/providers/points.dart';
+import 'package:tiffinwala/screens/address.dart';
 import 'package:tiffinwala/screens/auth.dart';
 import 'package:tiffinwala/screens/orders.dart';
 import 'package:tiffinwala/utils/appbar.dart';
@@ -76,7 +77,7 @@ class _ProfileState extends ConsumerState<Profile> {
     if (token.isNotEmpty && phone.isNotEmpty) {
       getLoyaltyPoints(ref);
       getPastOrders();
-      getUserData(ref);
+      getUserData(ref, phone, token);
     }
   }
 
@@ -112,7 +113,7 @@ class _ProfileState extends ConsumerState<Profile> {
     }
   }
 
-  Future<void> getUserData(WidgetRef ref) async {
+  Future<void> getUserData(WidgetRef ref, String phone, String token) async {
     var res = await http.get(
       Uri.parse('${BaseUrl.url}/user/$phone'),
       headers: {
@@ -122,14 +123,23 @@ class _ProfileState extends ConsumerState<Profile> {
     );
 
     var jsonRes = jsonDecode(res.body);
-    if (jsonRes['status']) {
-      firstName = jsonRes['data']['firstName'];
-      lastName = jsonRes['data']['lastName'];
-      address = jsonRes['data']['address'];
+    if (jsonRes['status'] == true) {
+      var firstName = jsonRes['data']['firstName'];
+      var lastName = jsonRes['data']['lastName'];
+      var addressesRaw = jsonRes['data']['address'] as List<dynamic>;
+
+      // Extract the list of address strings
+      List<String> addressStrings =
+          addressesRaw
+              .map((e) => e?.toString() ?? "")
+              .where((e) => e.isNotEmpty)
+              .toList();
+
+      // Update your new address provider
+      ref.read(addressProvider.notifier).setAddresses(addressStrings);
 
       ref.read(setFirstNameProvider.notifier).setFirstName(firstName);
       ref.read(setLastNameProvider.notifier).setLastName(lastName);
-      ref.read(setAddressProvider.notifier).setAddress(address);
       ref.read(isNameLoadedProvider.notifier).setNameLoaded(false);
       ref.read(isAddressLoadedProvider.notifier).setAddressLoaded(false);
     } else {
@@ -159,7 +169,11 @@ class _ProfileState extends ConsumerState<Profile> {
     final loyaltyPoints = ref.watch(setPointsProvider);
     final firstName = ref.watch(setFirstNameProvider);
     final lastName = ref.watch(setLastNameProvider);
-    final address = ref.watch(setAddressProvider);
+    final addresses = ref.read(addressProvider);
+    final primaryAddress = addresses.firstWhere(
+      (a) => a.isPrimary,
+      orElse: () => AddressModel(id: '', address: ''),
+    );
     addressLoading = ref.watch(isAddressLoadedProvider);
     isNameLoading = ref.watch(isNameLoadedProvider);
 
@@ -170,9 +184,12 @@ class _ProfileState extends ConsumerState<Profile> {
         context,
         firstName,
         lastName,
-        () => getUserData(ref),
+        () => getUserData(ref, phone, token),
       ),
-      () => editAddress(context, address, () => getUserData(ref)),
+      () => Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => AddressPage()),
+      ),
       () => Navigator.push(
         context,
         MaterialPageRoute(builder: (context) => Orders()),
@@ -274,7 +291,7 @@ class _ProfileState extends ConsumerState<Profile> {
                               ),
                             ],
                           )
-                          : Address(address: address),
+                          : Address(address: primaryAddress.address),
                     ],
                   ),
                 ),
@@ -346,41 +363,47 @@ class _ProfileState extends ConsumerState<Profile> {
                   ),
                 ),
               ),
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 25,
-                ),
-              ),
+              SliverToBoxAdapter(child: SizedBox(height: 25)),
               SliverToBoxAdapter(
                 child: material.Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Image.asset('assets/logo_dark.png', fit: BoxFit.contain, width: 100, height: 100,),
+                    Image.asset(
+                      'assets/logo_dark.png',
+                      fit: BoxFit.contain,
+                      width: 100,
+                      height: 100,
+                    ),
                   ],
                 ),
               ),
-              SliverToBoxAdapter(
-                child: SizedBox(height: 5,),
-              ),
+              SliverToBoxAdapter(child: SizedBox(height: 5)),
               SliverToBoxAdapter(
                 child: material.Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Image.asset('assets/icons/fssai.png', fit: BoxFit.contain, width: 60,),
+                    Image.asset(
+                      'assets/icons/fssai.png',
+                      fit: BoxFit.contain,
+                      width: 60,
+                    ),
                   ],
                 ),
               ),
               SliverToBoxAdapter(
                 child: material.Padding(
                   padding: const EdgeInsets.only(left: 10),
-                  child: Text('LIC NO. 2301923745896', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: const material.Color.fromARGB(255, 86, 86, 86)),),
+                  child: Text(
+                    'LIC NO. 2301923745896',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: const material.Color.fromARGB(255, 86, 86, 86),
+                    ),
+                  ),
                 ),
               ),
-              SliverToBoxAdapter(
-                child: SizedBox(
-                  height: 20,
-                ),
-              )
+              SliverToBoxAdapter(child: SizedBox(height: 20)),
             ],
           ),
         ),
@@ -483,102 +506,6 @@ Future<dynamic> editPersonalDetails(
                     return AlertDialog(
                       title: const Text('Error'),
                       content: const Text('Failed to update personal details.'),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.of(context).pop(),
-                          child: const Text('OK'),
-                        ),
-                      ],
-                    );
-                  },
-                );
-              }
-            },
-          ),
-        ],
-      );
-    },
-  );
-}
-
-Future<dynamic> editAddress(
-  material.BuildContext context,
-  String address,
-  VoidCallback onPressed,
-) {
-  return showDialog(
-    context: context,
-    builder: (context) {
-      final FormController controller = FormController();
-      return AlertDialog(
-        title: const Text('Edit your address', style: TextStyle(fontSize: 14)),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Make changes to your address here. Click save when you\'re done',
-              style: TextStyle(fontSize: 11.5),
-            ),
-            const Gap(16),
-            ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Form(
-                controller: controller,
-                child: FormTableLayout(
-                  rows: [
-                    FormField<String>(
-                      key: FormKey(#address),
-                      label: Text('Address', style: TextStyle(fontSize: 12)),
-                      child: TextField(
-                        initialValue: address,
-                        style: TextStyle(fontSize: 11),
-                      ),
-                    ),
-                  ],
-                ),
-              ).withPadding(vertical: 16),
-            ),
-          ],
-        ),
-        actions: [
-          PrimaryButton(
-            child: const Text(
-              'Save changes',
-              style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600),
-            ),
-            onPressed: () async {
-              var address = "";
-              var values = controller.values.map((key, value) {
-                address = value;
-                return MapEntry(key, value);
-              });
-              SharedPreferences prefs = await SharedPreferences.getInstance();
-              var phone = prefs.getString('phone');
-              var token = prefs.getString('token');
-
-              var body = {'address': address};
-              var res = await http.put(
-                Uri.parse('${BaseUrl.url}/user/address/$phone'),
-                headers: {
-                  'Content-Type': 'application/json',
-                  'authorization': 'Bearer $token',
-                },
-                body: jsonEncode(body),
-              );
-
-              var jsonRes = jsonDecode(res.body);
-              if (!context.mounted) return;
-              if (jsonRes['status']) {
-                onPressed();
-                Navigator.of(context).pop(values);
-              } else {
-                showDialog(
-                  context: context,
-                  builder: (context) {
-                    return AlertDialog(
-                      title: const Text('Error'),
-                      content: const Text('Failed to update address.'),
                       actions: [
                         TextButton(
                           onPressed: () => Navigator.of(context).pop(),

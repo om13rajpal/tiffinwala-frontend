@@ -64,21 +64,18 @@ class _MenuState extends ConsumerState<Menu> {
   late Razorpay _razorpay;
   final ItemScrollController _scrollController = ItemScrollController();
   final ScrollController _outerController = ScrollController();
-  late String address = '';
   late bool isLoading = ref.watch(isMenuLoadedProvider);
-  late bool isAddressLoading = ref.watch(isAddressLoadedProvider);
 
   // initializing shared preferences
   Future<void> initData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     ref.read(isMenuLoadedProvider.notifier).setMenu(true);
-    ref.read(isAddressLoadedProvider.notifier).setAddressLoaded(true);
     phone = prefs.getString('phone')!;
     token = prefs.getString('token')!;
 
     if (token.isNotEmpty && phone.isNotEmpty) {
       await getMenu();
-      await getUserData(ref);
+      await getUserData(ref, phone, token);
       await getLoyaltyPoints(ref);
     }
   }
@@ -272,10 +269,15 @@ class _MenuState extends ConsumerState<Menu> {
         log('Loyalty points used successfully');
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => Success(id: jsonRes['data']['_id']),
+              builder:
+                  (_) => Success(
+                    title: "Order Successful",
+                    message: "Your order has been received.",
+                    details: {"Order ID": jsonRes['data']['_id']},
+                  ),
             ),
           );
         });
@@ -357,10 +359,15 @@ class _MenuState extends ConsumerState<Menu> {
         log('Loyalty points used successfully');
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted) return;
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(
-              builder: (context) => Success(id: jsonRes['data']['_id']),
+              builder:
+                  (_) => Success(
+                    title: "Order Successful",
+                    message: "Your order has been received.",
+                    details: {"Order ID": jsonRes['data']['_id']},
+                  ),
             ),
           );
         });
@@ -382,22 +389,35 @@ class _MenuState extends ConsumerState<Menu> {
   }
 
   // fetching user data from the server
-  Future<void> getUserData(WidgetRef ref) async {
-    var res = await http.get(
-      Uri.parse('${BaseUrl.url}/user/$phone'),
-      headers: {
-        'Content-Type': 'application/json',
-        'authorization': 'Bearer $token',
-      },
-    );
+  Future<void> getUserData(WidgetRef ref, String phone, String token) async {
+    try {
+      final res = await http.get(
+        Uri.parse('${BaseUrl.url}/user/$phone'),
+        headers: {
+          'Content-Type': 'application/json',
+          'authorization': 'Bearer $token',
+        },
+      );
 
-    var jsonRes = jsonDecode(res.body);
-    if (jsonRes['status']) {
-      address = jsonRes['data']['address'];
-      ref.read(setAddressProvider.notifier).setAddress(address);
-      ref.read(isAddressLoadedProvider.notifier).setAddressLoaded(false);
-    } else {
-      log('Failed to fetch user data: ${jsonRes['message']}');
+      final jsonRes = jsonDecode(res.body);
+
+      if (jsonRes['status'] == true) {
+        final addresses = jsonRes['data']['address'] as List<dynamic>;
+
+        final addressStrings =
+            addresses
+                .map((e) => e?.toString() ?? "")
+                .where((e) => e.isNotEmpty)
+                .toList();
+
+        ref.read(addressProvider.notifier).setAddresses(addressStrings);
+
+        ref.read(isAddressLoadedProvider.notifier).setAddressLoaded(true);
+      } else {
+        debugPrint("Failed to fetch user data: ${jsonRes['message']}");
+      }
+    } catch (e) {
+      debugPrint("Error fetching user data: $e");
     }
   }
 
@@ -482,10 +502,15 @@ class _MenuState extends ConsumerState<Menu> {
   Widget build(BuildContext context) {
     // provider declarations
     List<CartItems> cartItems = ref.watch(cartProvider);
-    address = ref.watch(setAddressProvider);
+    final isAddressLoading = !ref.watch(isAddressLoadedProvider);
+    final addresses = ref.watch(addressProvider);
+    final primaryAddress = addresses.firstWhere(
+      (a) => a.isPrimary,
+      orElse: () => AddressModel(id: '', address: ''),
+    );
+
     loyaltyPoints = ref.watch(setPointsProvider);
     isLoading = ref.watch(isMenuLoadedProvider);
-    isAddressLoading = ref.watch(isAddressLoadedProvider);
     double price = ref.watch(
       cartProvider.notifier.select((cart) => cart.getNormalTotalPrice()),
     );
@@ -540,7 +565,7 @@ class _MenuState extends ConsumerState<Menu> {
                                       ),
                                       enabled: isLoading,
                                       child: material.Text(
-                                        'house no. 381 sector 16 -17 hisar 120551',
+                                        'house no. xyz sector xy - ab abcde 1234567',
                                         style: TextStyle(
                                           fontSize: 11,
                                           overflow: TextOverflow.ellipsis,
@@ -551,7 +576,7 @@ class _MenuState extends ConsumerState<Menu> {
                                     ),
                                   ],
                                 )
-                                : Address(address: address),
+                                : Address(address: primaryAddress.address),
                       ),
                     ),
                     SliverToBoxAdapter(child: SizedBox(height: 10)),
@@ -665,9 +690,7 @@ class _MenuState extends ConsumerState<Menu> {
           padding: const EdgeInsets.symmetric(horizontal: 15),
           height: 60,
           width: MediaQuery.of(context).size.width,
-          decoration: BoxDecoration(
-                        color: AppColors.primary,
-          ),
+          decoration: BoxDecoration(color: AppColors.primary),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -772,7 +795,11 @@ class _MenuState extends ConsumerState<Menu> {
                       child: Column(
                         children: List.generate(7, (index) {
                           return material.Padding(
-                            padding: const EdgeInsets.only(bottom: 15, left: 15, right: 20),
+                            padding: const EdgeInsets.only(
+                              bottom: 15,
+                              left: 15,
+                              right: 20,
+                            ),
                             child: material.Row(
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               crossAxisAlignment: CrossAxisAlignment.center,
@@ -785,13 +812,18 @@ class _MenuState extends ConsumerState<Menu> {
                                     Text('879 ka hai ye'),
                                   ],
                                 ),
-                                ClipRRect(borderRadius: BorderRadius.circular(12),child: SizedBox(
-                                  width: 80,
-                                  height: 80,
-                                  child: Image.asset('assets/logo.png', fit: BoxFit.cover, width: 80,),
+                                ClipRRect(
+                                  borderRadius: BorderRadius.circular(12),
+                                  child: SizedBox(
+                                    width: 80,
+                                    height: 80,
+                                    child: Image.asset(
+                                      'assets/logo.png',
+                                      fit: BoxFit.cover,
+                                      width: 80,
+                                    ),
+                                  ),
                                 ),
-                                  
-                                )
                               ],
                             ),
                           );

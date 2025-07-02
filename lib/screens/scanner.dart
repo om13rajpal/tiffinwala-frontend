@@ -15,7 +15,7 @@ class _UserScannerScreenState extends State<UserScannerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Scan Merchant QR")),
+      appBar: AppBar(title: Text("Scan Merchant QR", style: TextStyle(fontSize: 14),)),
       body: MobileScanner(
         onDetect: (BarcodeCapture capture) {
           final List<Barcode> barcodes = capture.barcodes;
