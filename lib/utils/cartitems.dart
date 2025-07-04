@@ -12,12 +12,10 @@ class CartItem extends ConsumerWidget {
     return Column(
       children: List.generate(cartItems.length, (index) {
         return ItemDetails(
-          isCartItem: true,
-          price: cartItems[index].totalPrice.toInt(),
-          title: cartItems[index].item['itemName'],
-          optionSet: cartItems[index].options,
-          item: cartItems[index].item,
+          cartItem: cartItems[index],
+          optionSet: cartItems[index].optionSet,
           index: index,
+          isCartItem: true,
         );
       }),
     );

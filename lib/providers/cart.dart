@@ -5,8 +5,15 @@ class CartItems {
   final double totalPrice;
   final List<dynamic> options;
   final int quantity;
+  final List<dynamic> optionSet;
 
-  CartItems(this.item, this.totalPrice, this.options, this.quantity);
+  CartItems(
+    this.item,
+    this.totalPrice,
+    this.options,
+    this.quantity,
+    this.optionSet,
+  );
 }
 
 class CartNotifier extends StateNotifier<List<CartItems>> {
@@ -17,21 +24,55 @@ class CartNotifier extends StateNotifier<List<CartItems>> {
     double totalPrice,
     List<dynamic> options,
     int quantity,
+    List<dynamic> optionSet, 
   ) {
-    final cartItem = CartItems(item, totalPrice, options, quantity);
-    state = [...state, cartItem];
+    final existingIndex = state.indexWhere(
+      (cartItem) =>
+          cartItem.item['itemName'] == item['itemName'] &&
+          _compareOptions(cartItem.options, options),
+    );
+
+    if (existingIndex != -1) {
+      final existingItem = state[existingIndex];
+      final updatedItem = CartItems(
+        existingItem.item,
+        existingItem.totalPrice,
+        existingItem.options,
+        existingItem.quantity + quantity,
+        existingItem.optionSet,
+      );
+      state = [
+        ...state.sublist(0, existingIndex),
+        updatedItem,
+        ...state.sublist(existingIndex + 1),
+      ];
+    } else {
+      final cartItem = CartItems(
+        item,
+        totalPrice,
+        options,
+        quantity,
+        optionSet,
+      );
+      state = [...state, cartItem];
+    }
   }
 
-  void removeItem(dynamic item) {
-    state =
-        state
-            .where((cartItem) => cartItem.item['itemName'] != item['itemName'])
-            .toList();
+  void removeItem(dynamic item, List<dynamic> options) {
+    state = state
+        .where(
+          (cartItem) =>
+              !(cartItem.item['itemName'] == item['itemName'] &&
+                _compareOptions(cartItem.options, options)),
+        )
+        .toList();
   }
 
-  void decrementCart(dynamic item) {
+  void decrementCart(dynamic item, List<dynamic> options) {
     final index = state.indexWhere(
-      (cartItem) => cartItem.item['itemName'] == item['itemName'],
+      (cartItem) =>
+          cartItem.item['itemName'] == item['itemName'] &&
+          _compareOptions(cartItem.options, options),
     );
     if (index != -1) {
       final cartItem = state[index];
@@ -41,6 +82,7 @@ class CartNotifier extends StateNotifier<List<CartItems>> {
           cartItem.totalPrice,
           cartItem.options,
           cartItem.quantity - 1,
+          cartItem.optionSet, 
         );
         state = [
           ...state.sublist(0, index),
@@ -48,14 +90,16 @@ class CartNotifier extends StateNotifier<List<CartItems>> {
           ...state.sublist(index + 1),
         ];
       } else {
-        removeItem(item);
+        removeItem(item, options);
       }
     }
   }
 
-  void incrementCart(dynamic item) {
+  void incrementCart(dynamic item, List<dynamic> options) {
     final index = state.indexWhere(
-      (cartItem) => cartItem.item['itemName'] == item['itemName'],
+      (cartItem) =>
+          cartItem.item['itemName'] == item['itemName'] &&
+          _compareOptions(cartItem.options, options),
     );
     if (index != -1) {
       final cartItem = state[index];
@@ -64,6 +108,7 @@ class CartNotifier extends StateNotifier<List<CartItems>> {
         cartItem.totalPrice,
         cartItem.options,
         cartItem.quantity + 1,
+        cartItem.optionSet,
       );
       state = [
         ...state.sublist(0, index),
@@ -81,7 +126,7 @@ class CartNotifier extends StateNotifier<List<CartItems>> {
     return total;
   }
 
-double getPayableAmount(double couponPercent, double loyaltyPoints) {
+  double getPayableAmount(double couponPercent, double loyaltyPoints) {
     double deliveryFee = 20;
     double subtotal = 0.0;
 
@@ -90,7 +135,6 @@ double getPayableAmount(double couponPercent, double loyaltyPoints) {
     }
 
     subtotal = subtotal - (subtotal * couponPercent / 100);
-
     subtotal = subtotal - loyaltyPoints;
 
     if (subtotal < 0) subtotal = 0;
@@ -99,22 +143,20 @@ double getPayableAmount(double couponPercent, double loyaltyPoints) {
 
     double total = subtotal + tax + deliveryFee;
     return total;
-}
-
-  bool itemExists(dynamic item) {
-    return state.any(
-      (cartItem) => cartItem.item['itemName'] == item['itemName'],
-    );
   }
 
-  int quantityCount(dynamic item) {
-    final index = state.indexWhere(
-      (cartItem) => cartItem.item['itemName'] == item['itemName'],
-    );
-    if (index != -1) {
-      return state[index].quantity;
+  bool _compareOptions(List<dynamic> a, List<dynamic> b) {
+    if (a.length != b.length) return false;
+    for (final opt in a) {
+      if (!b.any(
+        (o) =>
+            o['optionName'] == opt['optionName'] &&
+            o['price'] == opt['price'],
+      )) {
+        return false;
+      }
     }
-    return 0;
+    return true;
   }
 
   void clearCart() {

@@ -93,7 +93,6 @@ class _AddressPageState extends ConsumerState<AddressPage> {
     final addresses = ref.watch(addressProvider);
 
     return Scaffold(
-      backgroundColor: const Color(0xFF121212),
       body: SafeArea(
         child: Column(
           children: [

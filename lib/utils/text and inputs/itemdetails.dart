@@ -6,23 +6,26 @@ import 'package:tiffinwala/constants/veg.dart';
 import 'package:tiffinwala/providers/cart.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/buttons/checkbox.dart';
-import 'package:tiffinwala/utils/text%20and%20inputs/gradientext.dart';
+import 'package:tiffinwala/utils/text and inputs/gradientext.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart' as lucide;
 
 class ItemDetails extends ConsumerStatefulWidget {
-  final int price;
-  final String title;
+  final CartItems? cartItem;
   final dynamic item;
+  final int? price;
+  final String? title;
   final List<dynamic> optionSet;
   final int index;
   final bool isCartItem;
+
   const ItemDetails({
     super.key,
-    required this.price,
-    required this.title,
+    this.cartItem,
+    this.item,
+    this.price,
+    this.title,
     required this.optionSet,
-    required this.item,
     required this.index,
     required this.isCartItem,
   });
@@ -31,60 +34,96 @@ class ItemDetails extends ConsumerStatefulWidget {
   ConsumerState<ItemDetails> createState() => _ItemDetailsState();
 }
 
-List<dynamic> selectedOptions = [];
-
-void handleCheckbox(dynamic option, bool isChecked) {
-  if (isChecked) {
-    selectedOptions.add(option);
-  } else {
-    selectedOptions.remove(option);
-  }
-}
-
 class _ItemDetailsState extends ConsumerState<ItemDetails> {
+  List<dynamic> _selectedOptions = [];
+
   @override
-  Widget build(BuildContext context) {
+  void initState() {
+    super.initState();
+    if (widget.isCartItem) {
+      _selectedOptions = [];
+    }
+  }
+
+  @override
+  material.Widget build(material.BuildContext context) {
+    final isCart = widget.isCartItem;
+
+    final item = isCart ? widget.cartItem!.item : widget.item;
+    final price =
+        isCart ? widget.cartItem!.totalPrice : widget.price?.toDouble() ?? 0.0;
+    final title =
+        isCart ? widget.cartItem!.item['itemName'] : widget.title ?? '';
+    final options = isCart ? widget.cartItem!.options : _selectedOptions;
+
     final cart = ref.watch(cartProvider);
-    final counter =
-        cart
-            .firstWhere(
-              (item) => item.item['itemName'] == widget.item['itemName'],
-              orElse: () => CartItems(widget.item, 0.0, [], 0),
+
+    final existingCartItem =
+        cart.any(
+              (cartItem) =>
+                  cartItem.item['itemName'] == widget.item?['itemName'] &&
+                  _compareOptions(cartItem.options, _selectedOptions),
             )
-            .quantity;
+            ? cart.firstWhere(
+              (cartItem) =>
+                  cartItem.item['itemName'] == widget.item?['itemName'] &&
+                  _compareOptions(cartItem.options, _selectedOptions),
+            )
+            : null;
+
+    final counter =
+        isCart
+            ? widget.cartItem?.quantity ?? 0
+            : (existingCartItem?.quantity ?? 0);
+
     final itemExists = counter > 0;
 
-    return Container(
-      padding: EdgeInsets.only(left: 10, right: 10, top: 7, bottom: 20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: 3,
+    return material.Container(
+      padding: const material.EdgeInsets.only(
+        left: 10,
+        right: 10,
+        top: 7,
+        bottom: 20,
+      ),
+      child: material.Column(
+        crossAxisAlignment: material.CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.start,
+          material.Row(
+            mainAxisAlignment: material.MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: material.CrossAxisAlignment.start,
             children: [
               material.Column(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                crossAxisAlignment: CrossAxisAlignment.start,
+                crossAxisAlignment: material.CrossAxisAlignment.start,
                 children: [
-                  ItemType(widget: widget),
-                  SizedBox(height: 4),
-                  itemTitle(),
-                  SizedBox(height: 5),
-                  price(),
-                  SizedBox(height: 6),
-
+                  ItemType(item: item, index: widget.index),
+                  const material.SizedBox(height: 4),
+                  itemTitle(title),
+                  const material.SizedBox(height: 5),
+                  priceText(price),
+                  const material.SizedBox(height: 6),
                   material.SizedBox(
-                    width: MediaQuery.of(context).size.width * 0.5,
-                    child: Text(
+                    width: material.MediaQuery.of(context).size.width * 0.5,
+                    child: material.Text(
+                      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
                       maxLines: 2,
-                      'Lorem ipsum dolor sit amet, consectetur adipiscing elitSed do eiusmod tempor incididunt ut labore et dolore magna aliqua',
-                      style: TextStyle(
-                        overflow: TextOverflow.ellipsis,
+                      overflow: material.TextOverflow.ellipsis,
+                      style: material.TextStyle(
                         fontSize: 11.5,
-                        fontWeight: FontWeight.w500,
-                        color: const material.Color.fromARGB(255, 74, 74, 74),
+                        fontWeight: material.FontWeight.w500,
+                        color:
+                            isCart
+                                ? const material.Color.fromARGB(
+                                  255,
+                                  124,
+                                  124,
+                                  124,
+                                )
+                                : const material.Color.fromARGB(
+                                  255,
+                                  74,
+                                  74,
+                                  74,
+                                ),
                       ),
                     ),
                   ),
@@ -92,26 +131,28 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
               ),
               material.Stack(
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Container(
-                      color: Colors.gray,
+                  material.ClipRRect(
+                    borderRadius: material.BorderRadius.circular(12),
+                    child: material.Container(
+                      color: material.Colors.grey,
                       width: 110,
                       height: 110,
                     ),
                   ),
-                  Positioned(
+                  material.Positioned(
                     bottom: 0,
                     left: 0,
                     right: 0,
-                    child: Transform.translate(
-                      offset: Offset(0, 10),
-                      child: Container(
-                        child:
-                            (itemExists)
-                                ? material.Center(child: countButton(counter))
-                                : material.Center(child: addButton(context)),
-                      ),
+                    child: material.Transform.translate(
+                      offset: const material.Offset(0, 10),
+                      child:
+                          itemExists
+                              ? material.Center(
+                                child: countButton(counter, item, options),
+                              )
+                              : material.Center(
+                                child: addButton(context, item, price),
+                              ),
                     ),
                   ),
                 ],
@@ -123,44 +164,47 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
     );
   }
 
-  material.Text price() {
-    return Text(
-      '₹ ${widget.price.toString()}',
-      style: TextStyle(
+  material.Text priceText(double price) {
+    return material.Text(
+      '₹ ${price.toString()}',
+      style: material.TextStyle(
         fontSize: 12,
-        fontWeight: FontWeight.w500,
-        color: material.Color.fromARGB(255, 22, 22, 22),
+        fontWeight: material.FontWeight.w500,
+        color:
+            widget.isCartItem
+                ? material.Color.fromARGB(255, 177, 177, 177)
+                : material.Color.fromARGB(255, 22, 22, 22),
       ),
     );
   }
 
-  material.SizedBox addButton(material.BuildContext context) {
-    return SizedBox(
+  material.SizedBox addButton(
+    material.BuildContext context,
+    dynamic item,
+    double price,
+  ) {
+    return material.SizedBox(
       width: 80,
       height: 35,
       child: material.ElevatedButton(
         style: material.ButtonStyle(
-          backgroundColor: WidgetStatePropertyAll(Color(0xFF3E3E3E)),
-          padding: WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 6)),
-          shape: WidgetStatePropertyAll(
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          backgroundColor: const material.WidgetStatePropertyAll(
+            material.Color(0xFF3E3E3E),
+          ),
+          shape: material.WidgetStatePropertyAll(
+            material.RoundedRectangleBorder(
+              borderRadius: material.BorderRadius.circular(10),
+            ),
           ),
         ),
         onPressed: () {
-          selectedOptions.clear();
-          WoltModalSheet.show(
-            context: context,
-            pageListBuilder: (context) {
-              return [addOns(context, widget.optionSet, widget.item, ref)];
-            },
-            modalTypeBuilder: (context) => WoltModalType.dialog(),
-          );
+          openAddOns(context, item, price);
         },
-        child: Text(
+        child: material.Text(
           'ADD',
-          style: TextStyle(
+          style: material.TextStyle(
             fontSize: 10,
-            fontWeight: FontWeight.w600,
+            fontWeight: material.FontWeight.w600,
             color: AppColors.secondary,
           ),
         ),
@@ -168,191 +212,357 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
     );
   }
 
-  material.Container countButton(int counter) {
-    return Container(
+  material.Container countButton(
+    int counter,
+    dynamic item,
+    List<dynamic> options,
+  ) {
+    return material.Container(
       width: 80,
       height: 35,
-      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(10),
-        color: Color(0xFF3E3E3E),
+      padding: const material.EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      decoration: material.BoxDecoration(
+        borderRadius: material.BorderRadius.circular(10),
+        color: const material.Color(0xFF3E3E3E),
       ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        spacing: 5,
+      child: material.Row(
+        mainAxisAlignment: material.MainAxisAlignment.spaceBetween,
         children: [
-          GestureDetector(
-            onTap:
-                () =>
-                    ref.read(cartProvider.notifier).decrementCart(widget.item),
-            child: lucide.LucideIconWidget(icon: LucideIcons.minus, size: 13),
+          material.GestureDetector(
+            onTap: () {
+              if (widget.isCartItem) {
+                ref
+                    .read(cartProvider.notifier)
+                    .decrementCart(
+                      widget.cartItem!.item,
+                      widget.cartItem!.options,
+                    );
+              } else {
+                ref
+                    .read(cartProvider.notifier)
+                    .decrementCart(widget.item, _selectedOptions);
+              }
+            },
+            child: lucide.LucideIconWidget(
+              icon: lucide.LucideIcons.minus,
+              size: 13,
+            ),
           ),
-          Text(
+          material.Text(
             '$counter',
-            style: TextStyle(
+            style: material.TextStyle(
               fontSize: 12,
-              fontWeight: FontWeight.w500,
+              fontWeight: material.FontWeight.w500,
               color: AppColors.secondary,
             ),
           ),
-          GestureDetector(
-            onTap:
-                () =>
-                    ref.read(cartProvider.notifier).incrementCart(widget.item),
-            child: lucide.LucideIconWidget(icon: LucideIcons.plus, size: 13),
+          material.GestureDetector(
+            onTap: () => showIncrementDialog(context, item, options),
+            child: lucide.LucideIconWidget(
+              icon: lucide.LucideIcons.plus,
+              size: 13,
+            ),
           ),
         ],
       ),
     );
   }
 
-  material.SizedBox itemTitle() {
-    return SizedBox(
+  material.SizedBox itemTitle(String title) {
+    return material.SizedBox(
       width: 150,
-      child: Text(
-        widget.title,
-        style: TextStyle(
+      child: material.Text(
+        title,
+        style: material.TextStyle(
           fontSize: 13,
-          fontWeight: FontWeight.w600,
-          color: (widget.isCartItem) ? AppColors.secondary : AppColors.primary,
+          fontWeight: material.FontWeight.w600,
+          color: widget.isCartItem ? AppColors.secondary : AppColors.primary,
         ),
       ),
     );
   }
+
+  void showIncrementDialog(
+    material.BuildContext context,
+    dynamic item,
+    List<dynamic> options,
+  ) {
+    material.showDialog(
+      context: context,
+      builder:
+          (context) => material.AlertDialog(
+            title: const material.Text(
+              'Choose Action',
+              style: material.TextStyle(
+                fontSize: 14,
+                fontWeight: material.FontWeight.bold,
+              ),
+            ),
+            content: const material.Text(
+              'Would you like to add the same item again with existing customization or choose new customizations?',
+              style: material.TextStyle(fontSize: 12),
+            ),
+            actions: [
+              material.TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  if (widget.isCartItem) {
+                    ref
+                        .read(cartProvider.notifier)
+                        .incrementCart(
+                          widget.cartItem!.item,
+                          widget.cartItem!.options,
+                        );
+                  } else {
+                    ref
+                        .read(cartProvider.notifier)
+                        .incrementCart(widget.item, _selectedOptions);
+                  }
+                },
+                child: const material.Text(
+                  'Existing Customization',
+                  style: material.TextStyle(
+                    color: material.Color.fromARGB(255, 218, 218, 218),
+                    fontWeight: material.FontWeight.w600,
+                  ),
+                ),
+              ),
+              material.TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  openAddOns(context, item, widget.price?.toDouble() ?? 0.0);
+                },
+                child: const material.Text(
+                  'New Customization',
+                  style: material.TextStyle(
+                    color: material.Color.fromARGB(255, 218, 218, 218),
+                    fontWeight: material.FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+    );
+  }
+
+  void openAddOns(
+    material.BuildContext context,
+    dynamic item,
+    double basePrice,
+  ) {
+    WoltModalSheet.show(
+      context: context,
+      pageListBuilder: (context) {
+        return [
+          addOns(
+            context,
+            widget.optionSet,
+            item,
+            ref,
+            preselectedOptions:
+                widget.isCartItem ? widget.cartItem?.options : null,
+            onConfirm: (newOptions) {
+              setState(() {
+                _selectedOptions = List.from(newOptions);
+              });
+            },
+          ),
+        ];
+      },
+      modalTypeBuilder: (context) => WoltModalType.dialog(),
+    );
+  }
+
+  bool _compareOptions(List<dynamic> a, List<dynamic> b) {
+    if (a.length != b.length) return false;
+    for (final opt in a) {
+      if (!b.any(
+        (o) =>
+            o['optionName'] == opt['optionName'] && o['price'] == opt['price'],
+      )) {
+        return false;
+      }
+    }
+    return true;
+  }
 }
 
 class ItemType extends material.StatelessWidget {
-  const ItemType({super.key, required this.widget});
+  final dynamic item;
+  final int index;
 
-  final ItemDetails widget;
+  const ItemType({super.key, required this.item, required this.index});
 
   @override
   material.Widget build(material.BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+    return material.Row(
       children: [
-        (widget.item['itemTagIds'][0] == Classification.veg)
-            ? Image.asset('assets/icons/veg.png', width: 13, fit: BoxFit.cover)
-            : Image.asset(
-              'assets/icons/nonveg.png',
-              width: 13,
-              fit: BoxFit.cover,
-            ),
-        SizedBox(width: 5),
-        (widget.index == 0)
-            ? Container(
-              padding: EdgeInsets.only(
-                left: 6,
-                top: 1.5,
-                bottom: 2.5,
-                right: 6,
+        item['itemTagIds'][0] == Classification.veg
+            ? material.Image.asset('assets/icons/veg.png', width: 13)
+            : material.Image.asset('assets/icons/nonveg.png', width: 13),
+        const material.SizedBox(width: 5),
+        index == 0
+            ? material.Container(
+              padding: const material.EdgeInsets.symmetric(
+                horizontal: 6,
+                vertical: 1.5,
               ),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(5),
-                color: Color(0xFFF78080),
+              decoration: material.BoxDecoration(
+                borderRadius: material.BorderRadius.circular(5),
+                color: const material.Color(0xFFF78080),
               ),
-              child: Center(
-                child:
-                    (widget.index == 0)
-                        ? Text(
-                          'Best Seller',
-                          style: TextStyle(
-                            fontSize: 9.5,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFFB30000),
-                            height: 0,
-                          ),
-                        )
-                        : null,
+              child: const material.Text(
+                'Best Seller',
+                style: material.TextStyle(
+                  fontSize: 9.5,
+                  fontWeight: material.FontWeight.w700,
+                  color: material.Color(0xFFB30000),
+                ),
               ),
             )
-            : Container(),
+            : material.Container(),
       ],
     );
   }
 }
 
 WoltModalSheetPage addOns(
-  BuildContext context,
+  material.BuildContext context,
   List<dynamic> optionSet,
   dynamic item,
-  WidgetRef ref,
-) {
+  WidgetRef ref, {
+  List<dynamic>? preselectedOptions,
+  required void Function(List<dynamic>) onConfirm,
+}) {
+  List<dynamic> localSelectedOptions =
+      preselectedOptions != null ? List.from(preselectedOptions) : [];
+
+  void handleCheckbox(dynamic option, bool isChecked) {
+    if (isChecked) {
+      if (!localSelectedOptions.any(
+        (o) =>
+            o['optionName'] == option['optionName'] &&
+            o['price'] == option['price'],
+      )) {
+        localSelectedOptions.add(option);
+      }
+    } else {
+      localSelectedOptions.removeWhere(
+        (o) =>
+            o['optionName'] == option['optionName'] &&
+            o['price'] == option['price'],
+      );
+    }
+  }
+
   return WoltModalSheetPage(
     hasSabGradient: false,
     hasTopBarLayer: true,
-    topBar: const Center(
-      child: Text(
+    topBar: const material.Center(
+      child: material.Text(
         'Add-ons',
-        style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        style: material.TextStyle(
+          fontSize: 13,
+          fontWeight: material.FontWeight.w600,
+          color: Colors.white,
+        ),
       ),
     ),
-    scrollController: ScrollController(),
-    isTopBarLayerAlwaysVisible: true,
-    stickyActionBar: Padding(
-      padding: const EdgeInsets.only(bottom: 12),
+    stickyActionBar: material.Padding(
+      padding: const material.EdgeInsets.only(bottom: 12),
       child: TiffinButton(
         label: 'ADD TO CART',
         width: 120,
         height: 30,
         onPressed: () {
-          var itemPrice = item['price'].toDouble();
-          for (var option in selectedOptions) {
-            itemPrice += option['price'].toDouble();
+          var itemPrice = (item['price']?.toDouble()) ?? 0.0;
+          for (var option in localSelectedOptions) {
+            itemPrice += (option['price']?.toDouble() ?? 0.0);
           }
 
           ref
               .read(cartProvider.notifier)
-              .addItem(item, itemPrice, selectedOptions, 1);
+              .addItem(
+                item,
+                itemPrice,
+                List.from(localSelectedOptions),
+                1,
+                optionSet,
+              );
           Navigator.pop(context);
+          onConfirm(localSelectedOptions);
         },
       ),
     ),
     useSafeArea: true,
-    child: Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
-      child: Column(
-        spacing: 15,
+    child: material.Padding(
+      padding: const material.EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 10,
+      ),
+      child: material.Column(
         children: [
+          Text(
+            'Add ons',
+            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+          ),
+
           ...optionSet.asMap().entries.map((entry) {
             final idx = entry.key;
-            final e = entry.value;
-            return Container(
-              padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 5),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            final e = entry.value ?? {};
+            final name = e['name'] ?? '';
+            final optionsList = e['options'] ?? [];
+
+            return material.Container(
+              padding: const material.EdgeInsets.symmetric(
+                horizontal: 7,
+                vertical: 5,
+              ),
+              child: material.Column(
+                crossAxisAlignment: material.CrossAxisAlignment.start,
                 children: [
-                  GradientText(text: e['name']),
-                  const SizedBox(height: 17),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: List.generate(e['options'].length, (i) {
-                      final opt = e['options'][i];
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 15),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  GradientText(text: name),
+                  const material.SizedBox(height: 17),
+                  material.Column(
+                    children: List.generate(optionsList.length, (i) {
+                      final opt = optionsList[i] ?? {};
+                      final optionName = opt['optionName'] ?? '';
+                      final price = opt['price'] ?? 0;
+
+                      final isChecked = localSelectedOptions.any(
+                        (o) =>
+                            o['optionName'] == optionName &&
+                            o['price'] == price,
+                      );
+
+                      return material.Padding(
+                        padding: const material.EdgeInsets.only(bottom: 15),
+                        child: material.Row(
+                          mainAxisAlignment:
+                              material.MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(
-                              opt['optionName'],
-                              style: const TextStyle(
+                            material.Text(
+                              optionName.isNotEmpty
+                                  ? optionName
+                                  : 'Unnamed Option',
+                              style: const material.TextStyle(
                                 fontSize: 12,
-                                fontWeight: FontWeight.w500,
-                                color: Color(0xFFD2D2D2),
+                                fontWeight: material.FontWeight.w500,
+                                color: material.Color(0xFFD2D2D2),
                               ),
                             ),
-                            Row(
+                            material.Row(
                               children: [
-                                Text(
-                                  opt['price'] == 0 ? '' : '+ ₹${opt['price']}',
-                                  style: const TextStyle(
+                                material.Text(
+                                  price == 0 ? '' : '+ ₹$price',
+                                  style: const material.TextStyle(
                                     fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                    color: Color(0xFF787878),
+                                    fontWeight: material.FontWeight.w500,
+                                    color: material.Color(0xFF787878),
                                   ),
                                 ),
                                 TiffinCheckbox(
-                                  preChecked: opt['price'] == 0,
+                                  preChecked: isChecked,
                                   onChanged: (isChecked) {
                                     handleCheckbox(opt, isChecked);
                                   },
@@ -365,18 +575,16 @@ WoltModalSheetPage addOns(
                     }),
                   ),
                   if (idx != optionSet.length - 1)
-                    const Divider(
+                    const material.Divider(
+                      thickness: 0.5,
+                      color: material.Color.fromARGB(255, 65, 65, 65),
                       indent: 10,
                       endIndent: 10,
-                      thickness: 0.5,
-                      color: Color.fromARGB(255, 65, 65, 65),
                     ),
                 ],
               ),
             );
           }),
-
-          const SizedBox(height: 15),
         ],
       ),
     ),

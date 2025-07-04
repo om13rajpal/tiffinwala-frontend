@@ -126,17 +126,6 @@ class _ProfileState extends ConsumerState<Profile> {
     if (jsonRes['status'] == true) {
       var firstName = jsonRes['data']['firstName'];
       var lastName = jsonRes['data']['lastName'];
-      var addressesRaw = jsonRes['data']['address'] as List<dynamic>;
-
-      // Extract the list of address strings
-      List<String> addressStrings =
-          addressesRaw
-              .map((e) => e?.toString() ?? "")
-              .where((e) => e.isNotEmpty)
-              .toList();
-
-      // Update your new address provider
-      ref.read(addressProvider.notifier).setAddresses(addressStrings);
 
       ref.read(setFirstNameProvider.notifier).setFirstName(firstName);
       ref.read(setLastNameProvider.notifier).setLastName(lastName);

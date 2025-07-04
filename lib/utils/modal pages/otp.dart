@@ -30,7 +30,7 @@ SliverWoltModalSheetPage otp(
 
   Future<void> verifyOtp() async {
     ref.read(isLoadingProvider.notifier).setLoading(true);
-    var body = {'phoneNumber': '+91$phoneNumber', 'otp': otpData};
+    var body = {'phoneNumber': phoneNumber, 'otp': otpData};
 
     var response = await http.post(
       Uri.parse('${BaseUrl.url}/otp/verify'),

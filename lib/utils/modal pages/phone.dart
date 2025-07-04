@@ -20,7 +20,7 @@ SliverWoltModalSheetPage phone(
 
   Future<void> sendOtp() async {
     ref.read(isLoadingProvider.notifier).setLoading(true);
-    var body = {'phoneNumber': '+91${phoneController.text.trim()}'};
+    var body = {'phoneNumber': phoneController.text.trim()};
 
     var response = await http.post(
       Uri.parse('${BaseUrl.url}/otp/send'),
