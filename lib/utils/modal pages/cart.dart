@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobkit_dashed_border/mobkit_dashed_border.dart';
+import 'package:tiffinwala/providers/cart.dart';
 import 'package:tiffinwala/utils/cartitems.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/bill.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/gradientext.dart';
@@ -14,6 +15,10 @@ SliverWoltModalSheetPage cart(
   int loyaltyPoints,
   WidgetRef ref,
 ) {
+  // Get the current subtotal price from Riverpod
+  final totalPrice = ref.watch(
+    cartProvider.notifier.select((cart) => cart.getNormalTotalPrice()),
+  );
 
   return WoltModalSheetPage(
     pageTitle: Padding(
@@ -37,7 +42,12 @@ SliverWoltModalSheetPage cart(
       padding: const EdgeInsets.symmetric(horizontal: 30),
       width: MediaQuery.of(context).size.width,
       height: 100,
-      child: Paynow((method) => openCheckout?.call(method), loyaltyPoints, cod),
+      child: Paynow(
+        (method) => openCheckout?.call(method),
+        loyaltyPoints,
+        cod,
+        totalPrice,
+      ),
     ),
     forceMaxHeight: false,
     child: Center(

@@ -30,35 +30,35 @@ class _AuthState extends ConsumerState<Auth> {
                 height: MediaQuery.of(context).size.height,
               ),
               Positioned(
-  top: 80,
-  left: 0,
-  right: 0,
-  child: Center(
-    child: Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Text(
-          'Tiffin Wala',
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 41,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        Positioned(
-          top: -18,
-          left: -3.5,
-          child: LucideIconWidget(
-            icon: LucideIcons.chefHat,
-            size: 30,
-            strokeWidth: 0.5,
-            color: Colors.white,
-          ),
-        ),
-      ],
-    ),
-  ),
-),
+                top: 80,
+                left: 0,
+                right: 0,
+                child: Center(
+                  child: Stack(
+                    clipBehavior: Clip.none,
+                    children: [
+                      Text(
+                        'Tiffin Wala',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 41,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      Positioned(
+                        top: -18,
+                        left: -3.5,
+                        child: LucideIconWidget(
+                          icon: LucideIcons.chefHat,
+                          size: 30,
+                          strokeWidth: 0.5,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
 
               Positioned(
                 top: 140,
@@ -85,11 +85,14 @@ class _AuthState extends ConsumerState<Auth> {
                 child: Center(
                   child: ElevatedButton(
                     style: ButtonStyle(
-                      backgroundColor: WidgetStatePropertyAll(const Color.fromARGB(255, 89, 89, 89))
+                      backgroundColor: WidgetStatePropertyAll(
+                        const Color.fromARGB(255, 89, 89, 89),
+                      ),
                     ),
                     onPressed: () {
                       ref.read(isLoadingProvider.notifier).setLoading(false);
                       WoltModalSheet.show(
+                        barrierDismissible: false,
                         context: context,
                         pageListBuilder: (context) {
                           final textTheme = Theme.of(context).textTheme;

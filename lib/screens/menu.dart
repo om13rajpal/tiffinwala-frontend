@@ -26,6 +26,7 @@ import 'package:tiffinwala/providers/status.dart';
 import 'package:tiffinwala/screens/success.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/category.dart';
+import 'package:tiffinwala/utils/coupon.dart';
 import 'package:tiffinwala/utils/modal%20pages/cart.dart';
 import 'package:tiffinwala/utils/modal%20pages/popup.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/address.dart';
@@ -289,94 +290,123 @@ class _MenuState extends ConsumerState<Menu> {
   }
 
   // handling pay on delivery
-  void _handlePayOnDelivery() async {
-    List<dynamic> orders = [];
-    List<CartItems> cartItems = ref.watch(cartProvider);
-    for (var item in cartItems) {
-      var order = {
-        'shortName': item.item['itemName'],
-        'skuCode': item.item['itemName'],
-        'unitPrice': item.totalPrice,
-        'quantity': item.quantity,
-      };
+void _handlePayOnDelivery() async {
+  List<dynamic> orders = [];
+  List<CartItems> cartItems = ref.watch(cartProvider);
 
-      orders.add(order);
-    }
-
-    final discountState = ref.read(discountProvider);
-    final loyaltyDiscount = discountState.loyaltyDiscount;
-    final couponDiscount = discountState.couponDiscount;
-
-    double totalPrice = ref
-        .read(cartProvider.notifier)
-        .getPayableAmount(couponDiscount, loyaltyDiscount);
-
-    bool usingLoyaltyPoints = ref.watch(isUsingLoyaltyProvider);
-    final int discount =
-        usingLoyaltyPoints
-            ? (loyaltyPoints > totalPrice ? totalPrice.toInt() : loyaltyPoints)
-            : 0;
-
-    var body = {'phone': phone, 'points': -discount};
-
-    String orderMode = ref.watch(setOrderModeProvider);
-
-    var orderbody = {
-      'order': orders,
-      'price': totalPrice,
-      'phone': phone,
-      'paymentStatus': 'pending',
-      'paymentMethod': 'cod',
-      'orderMode': orderMode.toLowerCase(),
-      'discount': discount,
+  for (var item in cartItems) {
+    var order = {
+      'shortName': item.item['itemName'],
+      'skuCode': item.item['itemName'],
+      'unitPrice': item.totalPrice,
+      'quantity': item.quantity,
     };
 
+    orders.add(order);
+  }
+
+  // Read discount providers
+  final discountState = ref.read(discountProvider);
+  double loyaltyDiscount = discountState.loyaltyDiscount;
+  double couponDiscount = discountState.couponDiscount;
+
+  // Subtotal price (before discounts and delivery)
+  final subtotal = ref.read(
+    cartProvider.notifier.select((cart) => cart.getNormalTotalPrice()),
+  );
+
+  final deliveryCharge = 20.0;
+
+  // Cap loyalty discount to subtotal
+  if (loyaltyDiscount > subtotal) {
+    loyaltyDiscount = subtotal;
+  }
+
+  // Total discount = loyalty + coupon
+  double desiredTotalDiscount = loyaltyDiscount + couponDiscount;
+
+  // Cap total discount to subtotal
+  final totalDiscount =
+      desiredTotalDiscount > subtotal ? subtotal : desiredTotalDiscount;
+
+  final totalPayable = subtotal - totalDiscount + deliveryCharge;
+
+  // Check if loyalty points are being used
+  bool usingLoyaltyPoints = ref.watch(isUsingLoyaltyProvider);
+  final int loyaltyDiscountPoints = usingLoyaltyPoints
+      ? (loyaltyPoints > subtotal ? subtotal.toInt() : loyaltyPoints)
+      : 0;
+
+  // Deduct loyalty points from user
+  var body = {
+    'phone': phone,
+    'points': -loyaltyDiscountPoints,
+  };
+
+  String orderMode = ref.watch(setOrderModeProvider);
+
+  // Get coupon code
+  final couponCode = ref.read(couponProvider).code;
+
+  var orderbody = {
+    'order': orders,
+    'price': subtotal,
+    'delivery': deliveryCharge,
+    'discount': couponDiscount,        // only coupon discount here
+    'loyalty': loyaltyDiscount,        // only loyalty discount here
+    'couponCode': couponCode.isNotEmpty ? couponCode : null,
+    'phone': phone,
+    'paymentStatus': 'pending',
+    'paymentMethod': 'cod',
+    'orderMode': orderMode.toLowerCase(),
+  };
+
+  var res = await http.post(
+    Uri.parse('${BaseUrl.url}/user/loyalty'),
+    body: jsonEncode(body),
+    headers: {'Content-Type': 'application/json'},
+  );
+
+  var jsonRes = jsonDecode(res.body);
+
+  if (jsonRes['status']) {
     var res = await http.post(
-      Uri.parse('${BaseUrl.url}/user/loyalty'),
-      body: jsonEncode(body),
-      headers: {'Content-Type': 'application/json'},
+      Uri.parse('${BaseUrl.url}/order/new'),
+      body: jsonEncode(orderbody),
+      headers: {
+        'Content-Type': 'application/json',
+        'authorization': 'Bearer $token',
+      },
     );
 
     var jsonRes = jsonDecode(res.body);
 
     if (jsonRes['status']) {
-      var res = await http.post(
-        Uri.parse('${BaseUrl.url}/order/new'),
-        body: jsonEncode(orderbody),
-        headers: {
-          'Content-Type': 'application/json',
-          'authorization': 'Bearer $token',
-        },
-      );
-
-      var jsonRes = jsonDecode(res.body);
-
-      if (jsonRes['status']) {
-        ref.read(cartProvider.notifier).clearCart();
-        if (!mounted) return;
-        ref.read(couponProvider.notifier).reset();
-        ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
-        log('Loyalty points used successfully');
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-              builder:
-                  (_) => Success(
-                    title: "Order Successful",
-                    message: "Your order has been received.",
-                    details: {"Order ID": jsonRes['data']['_id']},
-                  ),
-            ),
-          );
-        });
-      }
-    } else {
+      ref.read(cartProvider.notifier).clearCart();
+      if (!mounted) return;
+      ref.read(couponProvider.notifier).reset();
       ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
-      log('Failed to use loyalty points: ${jsonRes['message']}');
+      log('Loyalty points used successfully');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => Success(
+              title: "Order Successful",
+              message: "Your order has been received.",
+              details: {"Order ID": jsonRes['data']['_id']},
+            ),
+          ),
+        );
+      });
     }
+  } else {
+    ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
+    log('Failed to use loyalty points: ${jsonRes['message']}');
   }
+}
+
 
   // handling razorpay payment error
   void _handlePaymentError(PaymentFailureResponse response) {
@@ -451,7 +481,7 @@ class _MenuState extends ConsumerState<Menu> {
       final jsonRes = await jsonDecode(response.body);
       if (response.statusCode == 200) {
         ref.read(statusProvider.notifier).state =
-            (jsonRes['store'] == 'Active');
+            (jsonRes['store'] == true);
       }
     } catch (e) {
       log(e.toString());
@@ -583,9 +613,10 @@ class _MenuState extends ConsumerState<Menu> {
                     SliverToBoxAdapter(child: MenuControls()),
                     SliverToBoxAdapter(child: SizedBox(height: 10)),
                     SliverToBoxAdapter(child: PosterCarousel()),
-                    SliverToBoxAdapter(child: SizedBox(height: 10)),
                     SliverToBoxAdapter(child: CouponCode()),
-                    SliverToBoxAdapter(child: SizedBox(height: 7)),
+                    SliverToBoxAdapter(child: SizedBox(height: 2)),
+                    SliverToBoxAdapter(child: CouponList()),
+                    SliverToBoxAdapter(child: SizedBox(height: 2)),
                     SliverToBoxAdapter(child: tiffinMenu(context, open)),
                     SliverToBoxAdapter(child: SizedBox(height: 20)),
                     SliverToBoxAdapter(
@@ -618,7 +649,7 @@ class _MenuState extends ConsumerState<Menu> {
                       child: material.Padding(
                         padding: const EdgeInsets.only(left: 10),
                         child: Text(
-                          'LIC NO. 2301923745896',
+                          'LIC NO. 22123040000790',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,

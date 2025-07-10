@@ -16,7 +16,15 @@ class Paynow extends ConsumerStatefulWidget {
   final void Function(String method)? openCheckout;
   final VoidCallback cod;
   final int loyaltyPoints;
-  const Paynow(this.openCheckout, this.loyaltyPoints, this.cod, {super.key});
+  final double totalPrice;
+
+  const Paynow(
+    this.openCheckout,
+    this.loyaltyPoints,
+    this.cod,
+    this.totalPrice, {
+    super.key,
+  });
 
   @override
   ConsumerState<Paynow> createState() => _PaynowState();
@@ -25,6 +33,8 @@ class Paynow extends ConsumerStatefulWidget {
 TextEditingController coupon = TextEditingController();
 
 class _PaynowState extends ConsumerState<Paynow> {
+  bool verifying = false;
+
   void handleCheckbox(bool isChecked) {
     if (isChecked) {
       ref
@@ -36,22 +46,76 @@ class _PaynowState extends ConsumerState<Paynow> {
   }
 
   void verifyCoupon() async {
-    final body = {"code": coupon.text.trim().toLowerCase()};
+    if (coupon.text.trim().isEmpty) return;
 
-    final response = await http.post(
-      Uri.parse("${BaseUrl.url}/coupon/verify"),
-      body: jsonEncode(body),
-      headers: {"Content-Type": "application/json"},
-    );
+    setState(() {
+      verifying = true;
+    });
 
-    final jsonRes = jsonDecode(response.body);
+    final body = {
+      "code": coupon.text.trim(),
+      "price": widget.totalPrice
+    };
 
-    if (response.statusCode == 200) {
-      final dis = jsonRes["data"]["discount"].toDouble();
+    try {
+      final response = await http.post(
+        Uri.parse("${BaseUrl.url}/coupon/verifyCoupon"),
+        body: jsonEncode(body),
+        headers: {"Content-Type": "application/json"},
+      );
 
-      ref.read(discountProvider.notifier).setCouponDiscount(dis);
-      ref.read(couponProvider.notifier).setCoupon(dis.toInt());
-      setState(() {});
+      final jsonRes = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        double discount = 0;
+        final discountValue = jsonRes["data"]["discount"];
+        if (discountValue is int) {
+          discount = discountValue.toDouble();
+        } else if (discountValue is double) {
+          discount = discountValue;
+        }
+
+        ref.read(discountProvider.notifier).setCouponDiscount(discount);
+        ref.read(couponProvider.notifier).setCoupon(discount.toInt(), coupon.text.trim());
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              "Coupon applied successfully!",
+              style: TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.green.shade700,
+          ),
+        );
+        setState(() {});
+      } else {
+        ref.read(discountProvider.notifier).setCouponDiscount(0.0);
+        ref.read(couponProvider.notifier).reset();
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              jsonRes["message"] ?? "Failed to apply coupon.",
+              style: TextStyle(color: Colors.white),
+            ),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            "Error verifying coupon. Please try again.",
+            style: TextStyle(color: Colors.white),
+          ),
+          backgroundColor: Colors.red.shade700,
+        ),
+      );
+    } finally {
+      setState(() {
+        verifying = false;
+      });
     }
   }
 
@@ -80,7 +144,6 @@ class _PaynowState extends ConsumerState<Paynow> {
 
     final loyaltyApplied = discountState.loyaltyDiscount > 0;
 
-
     return Column(
       spacing: 10,
       children: [
@@ -91,10 +154,9 @@ class _PaynowState extends ConsumerState<Paynow> {
               child: SizedBox(
                 height: 35,
                 child: TextField(
-                  controller:
-                      couponUsed
-                          ? TextEditingController(text: coupon.text)
-                          : coupon,
+                  controller: couponUsed
+                      ? TextEditingController(text: coupon.text)
+                      : coupon,
                   readOnly: couponUsed,
                   style: TextStyle(
                     fontSize: 13,
@@ -118,16 +180,28 @@ class _PaynowState extends ConsumerState<Paynow> {
                       borderSide: BorderSide.none,
                     ),
                     prefixIcon: Icon(LucideIcons.badgePercent, size: 16),
-                    suffixIcon:
-                        couponUsed
-                            ? InkWell(
-                              onTap: removeCoupon,
-                              child: Icon(LucideIcons.x, size: 16),
-                            )
-                            : InkWell(
-                              onTap: verifyCoupon,
-                              child: Icon(LucideIcons.chevronRight, size: 16),
+                    suffixIcon: verifying
+                        ? SizedBox(
+                            height: 14,
+                            width: 14,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: CircularProgressIndicator(
+                                color: AppColors.accent,
+                                strokeWidth: 2,
+                              ),
                             ),
+                          )
+                        : couponUsed
+                            ? InkWell(
+                                onTap: removeCoupon,
+                                child: Icon(LucideIcons.x, size: 16),
+                              )
+                            : InkWell(
+                                onTap: verifyCoupon,
+                                child:
+                                    Icon(LucideIcons.chevronRight, size: 16),
+                              ),
                   ),
                 ),
               ),
@@ -191,11 +265,10 @@ class _PaynowState extends ConsumerState<Paynow> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder:
-                        (context) => PaymentPage(
-                          openCheckout: widget.openCheckout,
-                          cod: widget.cod,
-                        ),
+                    builder: (context) => PaymentPage(
+                      openCheckout: widget.openCheckout,
+                      cod: widget.cod,
+                    ),
                   ),
                 );
               },

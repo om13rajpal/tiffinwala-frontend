@@ -71,7 +71,6 @@ class _ProfileState extends ConsumerState<Profile> {
     token = prefs.getString('token')!;
     phoneNumber = phone;
 
-    ref.read(isAddressLoadedProvider.notifier).setAddressLoaded(true);
     ref.read(isNameLoadedProvider.notifier).setNameLoaded(true);
 
     if (token.isNotEmpty && phone.isNotEmpty) {
@@ -130,7 +129,6 @@ class _ProfileState extends ConsumerState<Profile> {
       ref.read(setFirstNameProvider.notifier).setFirstName(firstName);
       ref.read(setLastNameProvider.notifier).setLastName(lastName);
       ref.read(isNameLoadedProvider.notifier).setNameLoaded(false);
-      ref.read(isAddressLoadedProvider.notifier).setAddressLoaded(false);
     } else {
       log('Failed to fetch user data: ${jsonRes['message']}');
     }
@@ -239,48 +237,7 @@ class _ProfileState extends ConsumerState<Profile> {
                             ),
                           ),
                       SizedBox(height: 4),
-                      (addressLoading)
-                          ? Row(
-                            children: [
-                              lucide.LucideIconWidget(
-                                icon: LucideIcons.map,
-                                strokeWidth: 2,
-                                color: AppColors.icon,
-                                size: 14,
-                              ),
-                              SizedBox(width: 10),
-                              Skeletonizer(
-                                containersColor: AppColors.accent,
-                                enableSwitchAnimation: true,
-                                effect: PulseEffect(
-                                  from: const material.Color.fromARGB(
-                                    255,
-                                    126,
-                                    126,
-                                    126,
-                                  ),
-                                  to: const material.Color.fromARGB(
-                                    255,
-                                    82,
-                                    82,
-                                    82,
-                                  ).withAlpha(100),
-                                  duration: Duration(milliseconds: 800),
-                                ),
-                                enabled: addressLoading,
-                                child: material.Text(
-                                  'house no. 381 sector 16 -17 hisar 120551',
-                                  style: TextStyle(
-                                    fontSize: 11,
-                                    overflow: TextOverflow.ellipsis,
-                                    color: AppColors.icon,
-                                    fontWeight: FontWeight.w400,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          )
-                          : Address(address: primaryAddress.address),
+                      Address(address: primaryAddress.address),
                     ],
                   ),
                 ),
@@ -383,7 +340,7 @@ class _ProfileState extends ConsumerState<Profile> {
                 child: material.Padding(
                   padding: const EdgeInsets.only(left: 10),
                   child: Text(
-                    'LIC NO. 2301923745896',
+                    'LIC NO. 22123040000790',
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,

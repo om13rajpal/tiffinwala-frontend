@@ -122,7 +122,7 @@ SliverWoltModalSheetPage otp(
                 fontWeight: FontWeight.w600,
                 color: AppColors.secondary,
               ),
-              endTime: DateTime.now().add(Duration(minutes: 15, seconds: 0)),
+              endTime: DateTime.now().add(Duration(minutes: 5, seconds: 0)),
             ),
           ),
           SizedBox(height: 10),

@@ -19,12 +19,16 @@ class _BillState extends ConsumerState<Bill> {
     ref.watch(cartProvider);
 
     final discountState = ref.watch(discountProvider);
-    final loyaltyDiscount = discountState.loyaltyDiscount;
     final couponDiscount = discountState.couponDiscount;
 
     final subtotal = ref.watch(
       cartProvider.notifier.select((cart) => cart.getNormalTotalPrice()),
     );
+
+    // cap loyalty discount so it does not exceed subtotal
+    final loyaltyDiscount = discountState.loyaltyDiscount > subtotal
+        ? subtotal
+        : discountState.loyaltyDiscount;
 
     double discountedSubtotal = subtotal - loyaltyDiscount - couponDiscount;
     if (discountedSubtotal < 0) discountedSubtotal = 0;
@@ -37,7 +41,7 @@ class _BillState extends ConsumerState<Bill> {
 
     return Container(
       width: MediaQuery.of(context).size.width,
-      padding: EdgeInsets.symmetric(horizontal: 10),
+      padding: const EdgeInsets.symmetric(horizontal: 10),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(12),
         color: const Color.fromARGB(255, 33, 33, 33),
@@ -50,10 +54,10 @@ class _BillState extends ConsumerState<Bill> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Text('Total bill amount', style: TextStyle(fontSize: 14)),
+                  const Text('Total bill amount', style: TextStyle(fontSize: 14)),
                   Text(
                     '₹ ${amountPayable.toStringAsFixed(2)}',
-                    style: TextStyle(fontSize: 14),
+                    style: const TextStyle(fontSize: 14),
                   ),
                 ],
               ),
@@ -78,8 +82,8 @@ class _BillState extends ConsumerState<Bill> {
                   'Delivery Charges',
                   deliveryCharges.toStringAsFixed(2),
                 ),
-                Divider(
-                  color: const Color.fromARGB(255, 89, 89, 89),
+                const Divider(
+                  color: Color.fromARGB(255, 89, 89, 89),
                   thickness: 0.5,
                 ),
                 _buildRow(
