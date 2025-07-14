@@ -58,7 +58,9 @@ SliverWoltModalSheetPage otp(
       if (jsonRes['status']) {
         showToast(
           context: context,
-          builder: buildToast,
+          builder:
+              (context, overlay) =>
+                  buildToast(context, overlay, 'User logged in successfully'),
           location: ToastLocation.topCenter,
         );
         ref.read(isLoadingProvider.notifier).setLoading(false);
@@ -77,6 +79,13 @@ SliverWoltModalSheetPage otp(
       }
     } else {
       ref.read(isLoadingProvider.notifier).setLoading(false);
+      showToast(
+        context: context,
+        builder:
+            (context, overlay) =>
+                buildToast(context, overlay, 'Invalid OTP, Please try again'),
+        location: ToastLocation.topCenter,
+      );
       log('otp not verified');
     }
   }

@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tiffinwala/providers/charge.dart';
 
 class CartItems {
   final dynamic item;
@@ -24,7 +25,7 @@ class CartNotifier extends StateNotifier<List<CartItems>> {
     double totalPrice,
     List<dynamic> options,
     int quantity,
-    List<dynamic> optionSet, 
+    List<dynamic> optionSet,
   ) {
     final existingIndex = state.indexWhere(
       (cartItem) =>
@@ -59,13 +60,14 @@ class CartNotifier extends StateNotifier<List<CartItems>> {
   }
 
   void removeItem(dynamic item, List<dynamic> options) {
-    state = state
-        .where(
-          (cartItem) =>
-              !(cartItem.item['itemName'] == item['itemName'] &&
-                _compareOptions(cartItem.options, options)),
-        )
-        .toList();
+    state =
+        state
+            .where(
+              (cartItem) =>
+                  !(cartItem.item['itemName'] == item['itemName'] &&
+                      _compareOptions(cartItem.options, options)),
+            )
+            .toList();
   }
 
   void decrementCart(dynamic item, List<dynamic> options) {
@@ -82,7 +84,7 @@ class CartNotifier extends StateNotifier<List<CartItems>> {
           cartItem.totalPrice,
           cartItem.options,
           cartItem.quantity - 1,
-          cartItem.optionSet, 
+          cartItem.optionSet,
         );
         state = [
           ...state.sublist(0, index),
@@ -126,22 +128,45 @@ class CartNotifier extends StateNotifier<List<CartItems>> {
     return total;
   }
 
-  double getPayableAmount(double couponPercent, double loyaltyPoints) {
-    double deliveryFee = 20;
+  int getTotalQuantity() {
+    int total = 0;
+    for (final item in state) {
+      total += item.quantity;
+    }
+    return total;
+  }
+
+  double getPayableAmount(
+    WidgetRef ref, {
+    double couponPercent = 0.0,
+    double loyaltyPoints = 0.0,
+  }) {
+    final charges = ref.read(chargesProvider);
+
+    final double deliveryFee = charges['deliveryCharge'] ?? 10.0;
+    final double packagingChargeRate = charges['packagingCharge'] ?? 6.0;
+
     double subtotal = 0.0;
+    int totalItems = 0;
 
     for (var item in state) {
       subtotal += item.totalPrice * item.quantity;
+      totalItems += item.quantity;
     }
 
-    subtotal = subtotal - (subtotal * couponPercent / 100);
-    subtotal = subtotal - loyaltyPoints;
+    // Apply coupon discount
+    subtotal -= subtotal * (couponPercent / 100);
+
+    // Deduct loyalty points
+    subtotal -= loyaltyPoints;
 
     if (subtotal < 0) subtotal = 0;
 
-    double tax = subtotal * 0.05;
+    final packagingFee = totalItems * packagingChargeRate;
+    final tax = subtotal * 0.05;
 
-    double total = subtotal + tax + deliveryFee;
+    final total = subtotal + tax + deliveryFee + packagingFee;
+
     return total;
   }
 
@@ -150,8 +175,7 @@ class CartNotifier extends StateNotifier<List<CartItems>> {
     for (final opt in a) {
       if (!b.any(
         (o) =>
-            o['optionName'] == opt['optionName'] &&
-            o['price'] == opt['price'],
+            o['optionName'] == opt['optionName'] && o['price'] == opt['price'],
       )) {
         return false;
       }

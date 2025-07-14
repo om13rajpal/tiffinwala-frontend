@@ -18,9 +18,11 @@ class ItemDetails extends ConsumerStatefulWidget {
   final List<dynamic> optionSet;
   final int index;
   final bool isCartItem;
+  final String? description;
 
   const ItemDetails({
     super.key,
+    this.description,
     this.cartItem,
     this.item,
     this.price,
@@ -104,26 +106,15 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
                   material.SizedBox(
                     width: material.MediaQuery.of(context).size.width * 0.5,
                     child: material.Text(
-                      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+                      widget.description ?? "",
                       maxLines: 2,
                       overflow: material.TextOverflow.ellipsis,
                       style: material.TextStyle(
                         fontSize: 11.5,
                         fontWeight: material.FontWeight.w500,
-                        color:
-                            isCart
-                                ? const material.Color.fromARGB(
-                                  255,
-                                  124,
-                                  124,
-                                  124,
-                                )
-                                : const material.Color.fromARGB(
-                                  255,
-                                  74,
-                                  74,
-                                  74,
-                                ),
+                        color: isCart
+                            ? const material.Color(0xFFEFEFEF)
+                            : const material.Color(0xFF4A4A4A),
                       ),
                     ),
                   ),
@@ -170,10 +161,9 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
       style: material.TextStyle(
         fontSize: 12,
         fontWeight: material.FontWeight.w500,
-        color:
-            widget.isCartItem
-                ? material.Color.fromARGB(255, 177, 177, 177)
-                : material.Color.fromARGB(255, 22, 22, 22),
+        color: widget.isCartItem
+            ? const material.Color(0xFFEFEFEF)
+            : const material.Color(0xFF161616),
       ),
     );
   }
@@ -502,11 +492,10 @@ WoltModalSheetPage addOns(
       ),
       child: material.Column(
         children: [
-          Text(
+          material.Text(
             'Add ons',
-            style: TextStyle(fontSize: 17, fontWeight: FontWeight.w600),
+            style: material.TextStyle(fontSize: 17, fontWeight: material.FontWeight.w600),
           ),
-
           ...optionSet.asMap().entries.map((entry) {
             final idx = entry.key;
             final e = entry.value ?? {};

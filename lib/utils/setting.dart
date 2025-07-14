@@ -42,7 +42,7 @@ class Setting extends StatelessWidget {
               height: 40,
               decoration: BoxDecoration(
                 border:
-                    (index != 3)
+                    (index != 4)
                         ? Border(bottom: BorderSide(color: Color(0xff464646)))
                         : null,
               ),

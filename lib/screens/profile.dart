@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'dart:developer';
 import 'package:flutter/material.dart' as material;
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart' as lucide;
 import 'package:shadcn_flutter/shadcn_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -35,6 +35,7 @@ List<String> _settings = [
   'Personal Details',
   'Address',
   'Past orders',
+  'Copy Referral Code',
   'Log out',
 ];
 
@@ -42,6 +43,7 @@ Set<IconData> _settingIcons = {
   LucideIcons.user,
   LucideIcons.mapPin,
   LucideIcons.box,
+  LucideIcons.stepBack,
   LucideIcons.logOut,
 };
 
@@ -49,6 +51,7 @@ List<Color> _bgColors = [
   Color.fromARGB(255, 255, 192, 33),
   Color.fromARGB(255, 0, 204, 255),
   Color.fromARGB(255, 255, 145, 0),
+  material.Color.fromARGB(255, 204, 0, 255),
   Color.fromARGB(255, 153, 153, 153),
 ];
 
@@ -109,6 +112,27 @@ class _ProfileState extends ConsumerState<Profile> {
 
     if (jsonRes['status']) {
       pastOrders = jsonRes['data'];
+    }
+  }
+
+  Future<void> copyReferralCode() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? referralCode = prefs.getString('phone');
+    if (referralCode != null && referralCode.isNotEmpty) {
+      await Clipboard.setData(ClipboardData(text: referralCode));
+      if (mounted) {
+        material.ScaffoldMessenger.of(context).showSnackBar(
+          const material.SnackBar(
+            content: Text('Referral code copied to clipboard!'),
+          ),
+        );
+      }
+    } else {
+      if (mounted) {
+        material.ScaffoldMessenger.of(context).showSnackBar(
+          const material.SnackBar(content: Text('No referral code found.')),
+        );
+      }
     }
   }
 
@@ -181,6 +205,7 @@ class _ProfileState extends ConsumerState<Profile> {
         context,
         MaterialPageRoute(builder: (context) => Orders()),
       ),
+      () => copyReferralCode(),
       () => logout(context),
     ];
 
@@ -297,7 +322,7 @@ class _ProfileState extends ConsumerState<Profile> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
-                    children: List.generate(4, (index) {
+                    children: List.generate(5, (index) {
                       return Setting(
                         index: index,
                         label: _settings[index],

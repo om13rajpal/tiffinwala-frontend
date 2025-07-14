@@ -4,6 +4,7 @@ import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'package:tiffinwala/providers/cart.dart';
 import 'package:tiffinwala/providers/coupon.dart';
 import 'package:tiffinwala/providers/discount.dart';
+import 'package:tiffinwala/providers/charge.dart';
 
 class Bill extends ConsumerStatefulWidget {
   const Bill({super.key});
@@ -15,6 +16,7 @@ class Bill extends ConsumerStatefulWidget {
 class _BillState extends ConsumerState<Bill> {
   @override
   Widget build(BuildContext context) {
+    // Listen to relevant providers
     ref.watch(couponProvider);
     ref.watch(cartProvider);
 
@@ -35,9 +37,24 @@ class _BillState extends ConsumerState<Bill> {
 
     final cgst = discountedSubtotal * 0.025;
     final sgst = discountedSubtotal * 0.025;
-    const deliveryCharges = 20.0;
 
-    final amountPayable = discountedSubtotal + cgst + sgst + deliveryCharges;
+    // Read charges from provider
+    final charges = ref.watch(chargesProvider);
+    final packagingChargePerItem = charges['packagingCharge'] ?? 0.0;
+    final deliveryCharge = charges['deliveryCharge'] ?? 0.0;
+
+    // Calculate total quantity in cart
+    final totalQuantity = ref
+        .read(cartProvider.notifier)
+        .getTotalQuantity();
+
+    final packagingCharge = packagingChargePerItem * totalQuantity;
+
+    final amountPayable = discountedSubtotal +
+        cgst +
+        sgst +
+        packagingCharge +
+        deliveryCharge;
 
     return Container(
       width: MediaQuery.of(context).size.width,
@@ -54,7 +71,10 @@ class _BillState extends ConsumerState<Bill> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  const Text('Total bill amount', style: TextStyle(fontSize: 14)),
+                  const Text(
+                    'Total bill amount',
+                    style: TextStyle(fontSize: 14),
+                  ),
                   Text(
                     '₹ ${amountPayable.toStringAsFixed(2)}',
                     style: const TextStyle(fontSize: 14),
@@ -78,10 +98,16 @@ class _BillState extends ConsumerState<Bill> {
                   ),
                 _buildRow('CGST (2.5%)', cgst.toStringAsFixed(2)),
                 _buildRow('SGST (2.5%)', sgst.toStringAsFixed(2)),
-                _buildRow(
-                  'Delivery Charges',
-                  deliveryCharges.toStringAsFixed(2),
-                ),
+                if (packagingCharge > 0)
+                  _buildRow(
+                    'Packaging Charges',
+                    packagingCharge.toStringAsFixed(2),
+                  ),
+                if (deliveryCharge > 0)
+                  _buildRow(
+                    'Delivery Charges',
+                    deliveryCharge.toStringAsFixed(2),
+                  ),
                 const Divider(
                   color: Color.fromARGB(255, 89, 89, 89),
                   thickness: 0.5,

@@ -52,10 +52,7 @@ class _PaynowState extends ConsumerState<Paynow> {
       verifying = true;
     });
 
-    final body = {
-      "code": coupon.text.trim(),
-      "price": widget.totalPrice
-    };
+    final body = {"code": coupon.text.trim(), "price": widget.totalPrice};
 
     try {
       final response = await http.post(
@@ -76,8 +73,10 @@ class _PaynowState extends ConsumerState<Paynow> {
         }
 
         ref.read(discountProvider.notifier).setCouponDiscount(discount);
-        ref.read(couponProvider.notifier).setCoupon(discount.toInt(), coupon.text.trim());
-
+        ref
+            .read(couponProvider.notifier)
+            .setCoupon(discount.toInt(), coupon.text.trim());
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -91,7 +90,7 @@ class _PaynowState extends ConsumerState<Paynow> {
       } else {
         ref.read(discountProvider.notifier).setCouponDiscount(0.0);
         ref.read(couponProvider.notifier).reset();
-
+        if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
@@ -132,14 +131,11 @@ class _PaynowState extends ConsumerState<Paynow> {
     final couponUsed = ref.watch(couponProvider).verified;
 
     List<CartItems> cartItems = ref.watch(cartProvider);
-
-    final totalPayable = ref.watch(
-      cartProvider.notifier.select(
-        (cart) => cart.getPayableAmount(
-          discountState.couponDiscount,
-          discountState.loyaltyDiscount,
-        ),
-      ),
+    final cartNotifier = ref.read(cartProvider.notifier);
+    final totalPayable = cartNotifier.getPayableAmount(
+      ref,
+      couponPercent: discountState.couponDiscount,
+      loyaltyPoints: discountState.loyaltyDiscount,
     );
 
     final loyaltyApplied = discountState.loyaltyDiscount > 0;
@@ -154,9 +150,10 @@ class _PaynowState extends ConsumerState<Paynow> {
               child: SizedBox(
                 height: 35,
                 child: TextField(
-                  controller: couponUsed
-                      ? TextEditingController(text: coupon.text)
-                      : coupon,
+                  controller:
+                      couponUsed
+                          ? TextEditingController(text: coupon.text)
+                          : coupon,
                   readOnly: couponUsed,
                   style: TextStyle(
                     fontSize: 13,
@@ -180,28 +177,28 @@ class _PaynowState extends ConsumerState<Paynow> {
                       borderSide: BorderSide.none,
                     ),
                     prefixIcon: Icon(LucideIcons.badgePercent, size: 16),
-                    suffixIcon: verifying
-                        ? SizedBox(
-                            height: 14,
-                            width: 14,
-                            child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: CircularProgressIndicator(
-                                color: AppColors.accent,
-                                strokeWidth: 2,
+                    suffixIcon:
+                        verifying
+                            ? SizedBox(
+                              height: 14,
+                              width: 14,
+                              child: Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: CircularProgressIndicator(
+                                  color: AppColors.accent,
+                                  strokeWidth: 2,
+                                ),
                               ),
-                            ),
-                          )
-                        : couponUsed
+                            )
+                            : couponUsed
                             ? InkWell(
-                                onTap: removeCoupon,
-                                child: Icon(LucideIcons.x, size: 16),
-                              )
+                              onTap: removeCoupon,
+                              child: Icon(LucideIcons.x, size: 16),
+                            )
                             : InkWell(
-                                onTap: verifyCoupon,
-                                child:
-                                    Icon(LucideIcons.chevronRight, size: 16),
-                              ),
+                              onTap: verifyCoupon,
+                              child: Icon(LucideIcons.chevronRight, size: 16),
+                            ),
                   ),
                 ),
               ),
@@ -265,10 +262,11 @@ class _PaynowState extends ConsumerState<Paynow> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder: (context) => PaymentPage(
-                      openCheckout: widget.openCheckout,
-                      cod: widget.cod,
-                    ),
+                    builder:
+                        (context) => PaymentPage(
+                          openCheckout: widget.openCheckout,
+                          cod: widget.cod,
+                        ),
                   ),
                 );
               },

@@ -23,7 +23,7 @@ class _CouponListState extends State<CouponList> {
   }
 
   Future<void> fetchCoupons() async {
-    final url = Uri.parse('http://localhost:3003/coupon/');
+    final url = Uri.parse('https://api.sixty6foods.in/coupon/');
     try {
       final response = await http.get(url);
       final json = jsonDecode(response.body);
@@ -69,7 +69,7 @@ class _CouponListState extends State<CouponList> {
                   ),
                 ),
                 IconButton(
-                  icon: Icon(Icons.copy, size: 18, color: AppColors.accent),
+                  icon: Icon(Icons.copy, size: 18, color: AppColors.secondary),
                   onPressed: () {
                     Clipboard.setData(
                       ClipboardData(text: coupon['code'].toString()),
@@ -127,7 +127,7 @@ class _CouponListState extends State<CouponList> {
                 child: Text(
                   'Close',
                   style: TextStyle(
-                    color: AppColors.accent,
+                    color: Colors.white,
                     fontWeight: FontWeight.w600,
                   ),
                 ),

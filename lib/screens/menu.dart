@@ -16,6 +16,7 @@ import 'package:tiffinwala/constants/url.dart';
 import 'package:tiffinwala/providers/address.dart';
 import 'package:tiffinwala/providers/addressloaded.dart';
 import 'package:tiffinwala/providers/cart.dart';
+import 'package:tiffinwala/providers/charge.dart';
 import 'package:tiffinwala/providers/coupon.dart';
 import 'package:tiffinwala/providers/discount.dart';
 import 'package:tiffinwala/providers/ismenuloaded.dart';
@@ -35,6 +36,7 @@ import 'package:tiffinwala/utils/carousel.dart';
 import 'package:tiffinwala/utils/coupen.dart';
 import 'package:tiffinwala/utils/menucontrols.dart';
 import 'package:http/http.dart' as http;
+import 'package:tiffinwala/utils/text%20and%20inputs/toast.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 
 class Menu extends ConsumerStatefulWidget {
@@ -42,6 +44,43 @@ class Menu extends ConsumerStatefulWidget {
 
   @override
   ConsumerState<Menu> createState() => _MenuState();
+}
+
+Future<Map<String, dynamic>> apiGet(
+  String path, {
+  Map<String, String>? headers,
+}) async {
+  final res = await http.get(
+    Uri.parse('${BaseUrl.url}$path'),
+    headers: {'Content-Type': 'application/json', ...?headers},
+  );
+  return jsonDecode(res.body) as Map<String, dynamic>;
+}
+
+Future<Map<String, dynamic>> apiPost(
+  String path,
+  dynamic body, {
+  Map<String, String>? headers,
+}) async {
+  final res = await http.post(
+    Uri.parse('${BaseUrl.url}$path'),
+    body: jsonEncode(body),
+    headers: {'Content-Type': 'application/json', ...?headers},
+  );
+  return jsonDecode(res.body) as Map<String, dynamic>;
+}
+
+List<Map<String, dynamic>> buildOrders(List<CartItems> cartItems) {
+  return cartItems
+      .map(
+        (item) => {
+          'shortName': item.item['itemName'],
+          'skuCode': item.item['itemName'],
+          'unitPrice': item.totalPrice,
+          'quantity': item.quantity,
+        },
+      )
+      .toList();
 }
 
 // list declarations
@@ -83,17 +122,13 @@ class _MenuState extends ConsumerState<Menu> {
 
   // fetching loyalty points
   Future<void> getLoyaltyPoints(WidgetRef ref) async {
-    var response = await http.get(
-      Uri.parse('${BaseUrl.url}/user/loyalty/$phone'),
-      headers: {
-        'Content-Type': "application/json",
-        "authorization": "Bearer $token",
-      },
+    final jsonRes = await apiGet(
+      '/user/loyalty/$phone',
+      headers: {'authorization': 'Bearer $token'},
     );
 
-    var jsonRes = jsonDecode(response.body);
-    if (jsonRes['status']) {
-      loyaltyPoints = jsonRes['data'];
+    if (jsonRes['status'] == true) {
+      loyaltyPoints = jsonRes['data'] ?? 0;
       ref.read(setPointsProvider.notifier).setPoints(loyaltyPoints);
     }
   }
@@ -108,51 +143,70 @@ class _MenuState extends ConsumerState<Menu> {
     categoryItems.clear();
     allCategoryItems.clear();
 
-    final response = await http.get(
-      Uri.parse('${BaseUrl.url}/menu'),
-      headers: {'Content-Type': 'application/json'},
-    );
-    final jsonRes = jsonDecode(response.body);
+    final jsonRes = await apiGet('/menu');
 
-    if (jsonRes['status']) {
-      categories = jsonRes['data']['categories'];
-      items = jsonRes['data']['items'];
-      optionSets = jsonRes['data']['optionSets'];
-
-      for (var item in items) {
-        final List<dynamic> opts = [];
-        if (item['optionSetIds'] != null) {
-          for (var id in item['optionSetIds']) {
-            opts.add(optionSets.firstWhere((o) => o['optionSetId'] == id));
-          }
-        }
-        optionSetItemWise.add(opts);
-      }
-
-      for (var i = 0; i < items.length; i++) {
-        menu.add({'item': items[i], 'optionSet': optionSetItemWise[i]});
-      }
-
-      for (var cat in categories) {
-        final List<dynamic> inThisCat =
-            menu.where((entry) {
-              return entry['item']['categoryId'] == cat['categoryId'];
-            }).toList();
-        categoryItems.add(inThisCat);
-      }
-
-      categories = categories.reversed.toList();
-      categoryItems = categoryItems.reversed.toList();
-
-      allCategoryItems =
-          categoryItems.map((list) => List<dynamic>.from(list)).toList();
-
-      categoryKeys = List.generate(categories.length, (_) => GlobalKey());
-      ref.read(isMenuLoadedProvider.notifier).setMenu(false);
-      setState(() {});
-    } else {
-      log(jsonRes['message']);
+    if (jsonRes['status'] != true) {
+      log(jsonRes['message'] ?? 'Unknown error loading menu.');
+      return;
     }
+
+    categories = jsonRes['data']['categories'];
+    items = jsonRes['data']['items'];
+    optionSets = jsonRes['data']['optionSets'];
+    final chargesList = jsonRes['data']['charges'] as List;
+
+    final optionSetMap = {for (var opt in optionSets) opt['optionSetId']: opt};
+
+    optionSetItemWise =
+        items.map((item) {
+          final ids = item['optionSetIds'] as List?;
+          return ids?.map((id) => optionSetMap[id]).toList() ?? [];
+        }).toList();
+
+    menu = [
+      for (var i = 0; i < items.length; i++)
+        {'item': items[i], 'optionSet': optionSetItemWise[i]},
+    ];
+
+    for (var cat in categories) {
+      final itemsInCategory =
+          menu
+              .where(
+                (entry) => entry['item']['categoryId'] == cat['categoryId'],
+              )
+              .toList();
+
+      categoryItems.add(itemsInCategory);
+    }
+
+    double packaging = 0.0;
+    double delivery = 0.0;
+    for (final chargeJson in chargesList) {
+      switch (chargeJson['name']) {
+        case "App Packaging Charges":
+          packaging = (chargeJson['chargeRate'] as num).toDouble();
+          break;
+        case "App Delivery Charges":
+          delivery = (chargeJson['chargeRate'] as num).toDouble();
+          break;
+      }
+    }
+
+    ref.read(chargesProvider.notifier).state = {
+      'packagingCharge': packaging,
+      'deliveryCharge': delivery,
+    };
+
+    categories = categories.reversed.toList();
+    categoryItems = categoryItems.reversed.toList();
+
+    allCategoryItems =
+        categoryItems.map((list) => List<dynamic>.from(list)).toList();
+
+    categoryKeys = List.generate(categories.length, (_) => GlobalKey());
+
+    ref.read(isMenuLoadedProvider.notifier).setMenu(false);
+    setState(() {});
   }
 
   // opening razorpay checkout page for payment
@@ -200,69 +254,64 @@ class _MenuState extends ConsumerState<Menu> {
   }
 
   // handling razorpay payment success
-  void _handlePaymentSuccess(PaymentSuccessResponse response) async {
-    List<dynamic> orders = [];
-    List<CartItems> cartItems = ref.watch(cartProvider);
+  Future<void> _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    final cartItems = ref.watch(cartProvider);
     final discountState = ref.read(discountProvider);
     final loyaltyDiscount = discountState.loyaltyDiscount;
     final couponDiscount = discountState.couponDiscount;
 
+    final subtotal = ref.read(
+      cartProvider.notifier.select((cart) => cart.getNormalTotalPrice()),
+    );
+
+    // ✅ NEW: Calculate delivery & packaging
+    final charges = ref.read(chargesProvider);
+    final packagingRate = charges['packagingCharge'] ?? 0.0;
+    final deliveryRate = charges['deliveryCharge'] ?? 0.0;
+
+    final totalQuantity = ref.read(cartProvider.notifier).getTotalQuantity();
+
+    final totalPackagingCharge = packagingRate * totalQuantity;
+    final totalDeliveryCharge = deliveryRate + totalPackagingCharge;
+
     double totalPrice = ref
         .read(cartProvider.notifier)
-        .getPayableAmount(couponDiscount, loyaltyDiscount);
+        .getPayableAmount(
+          ref,
+          couponPercent: couponDiscount,
+          loyaltyPoints: loyaltyDiscount,
+        );
 
-    for (var item in cartItems) {
-      var order = {
-        'shortName': item.item['itemName'],
-        'skuCode': item.item['itemName'],
-        'unitPrice': item.totalPrice,
-        'quantity': item.quantity,
-      };
-
-      orders.add(order);
-    }
+    final orders = buildOrders(cartItems);
 
     bool usingLoyaltyPoints = ref.watch(isUsingLoyaltyProvider);
-    final int discount =
-        usingLoyaltyPoints
-            ? (loyaltyPoints > totalPrice ? totalPrice.toInt() : loyaltyPoints)
-            : 0;
+    final discountPoints =
+        usingLoyaltyPoints ? loyaltyPoints.clamp(0, totalPrice.toInt()) : 0;
 
-    var body = {'phone': phone, 'points': -discount};
+    final body = {'phone': phone, 'points': -discountPoints};
 
     String orderMode = ref.watch(setOrderModeProvider);
 
-    var orderbody = {
+    final orderBody = {
       'order': orders,
       'price': totalPrice,
+      'delivery': totalDeliveryCharge,
+      'discount': couponDiscount + loyaltyDiscount,
       'phone': phone,
       'paymentStatus': 'completed',
       'paymentMethod': 'razorpay',
       'orderMode': orderMode.toLowerCase(),
-      'discount': couponDiscount + loyaltyDiscount,
     };
 
-    var res = await http.post(
-      Uri.parse('${BaseUrl.url}/user/loyalty'),
-      body: jsonEncode(body),
-      headers: {'Content-Type': 'application/json'},
-    );
-
-    var jsonRes = jsonDecode(res.body);
-
-    if (jsonRes['status']) {
-      var res = await http.post(
-        Uri.parse('${BaseUrl.url}/order/new'),
-        body: jsonEncode(orderbody),
-        headers: {
-          'Content-Type': 'application/json',
-          'authorization': 'Bearer $token',
-        },
+    final loyaltyRes = await apiPost('/user/loyalty', body);
+    if (loyaltyRes['status']) {
+      final orderRes = await apiPost(
+        '/order/new',
+        orderBody,
+        headers: {'authorization': 'Bearer $token'},
       );
 
-      var jsonRes = jsonDecode(res.body);
-
-      if (jsonRes['status']) {
+      if (orderRes['status']) {
         ref.read(cartProvider.notifier).clearCart();
         if (!mounted) return;
         ref.read(couponProvider.notifier).reset();
@@ -272,12 +321,12 @@ class _MenuState extends ConsumerState<Menu> {
           if (!mounted) return;
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(
+            material.MaterialPageRoute(
               builder:
                   (_) => Success(
                     title: "Order Successful",
                     message: "Your order has been received.",
-                    details: {"Order ID": jsonRes['data']['_id']},
+                    details: {"Order ID": orderRes['data']['_id']},
                   ),
             ),
           );
@@ -285,131 +334,103 @@ class _MenuState extends ConsumerState<Menu> {
       }
     } else {
       ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
-      log('Failed to use loyalty points: ${jsonRes['message']}');
+      log('Failed to use loyalty points: ${loyaltyRes['message']}');
     }
   }
 
   // handling pay on delivery
-void _handlePayOnDelivery() async {
-  List<dynamic> orders = [];
-  List<CartItems> cartItems = ref.watch(cartProvider);
+  Future<void> _handlePayOnDelivery() async {
+    final cartItems = ref.watch(cartProvider);
+    final orders = buildOrders(cartItems);
 
-  for (var item in cartItems) {
-    var order = {
-      'shortName': item.item['itemName'],
-      'skuCode': item.item['itemName'],
-      'unitPrice': item.totalPrice,
-      'quantity': item.quantity,
-    };
+    final discountState = ref.read(discountProvider);
+    double loyaltyDiscount = discountState.loyaltyDiscount;
+    double couponDiscount = discountState.couponDiscount;
 
-    orders.add(order);
-  }
-
-  // Read discount providers
-  final discountState = ref.read(discountProvider);
-  double loyaltyDiscount = discountState.loyaltyDiscount;
-  double couponDiscount = discountState.couponDiscount;
-
-  // Subtotal price (before discounts and delivery)
-  final subtotal = ref.read(
-    cartProvider.notifier.select((cart) => cart.getNormalTotalPrice()),
-  );
-
-  final deliveryCharge = 20.0;
-
-  // Cap loyalty discount to subtotal
-  if (loyaltyDiscount > subtotal) {
-    loyaltyDiscount = subtotal;
-  }
-
-  // Total discount = loyalty + coupon
-  double desiredTotalDiscount = loyaltyDiscount + couponDiscount;
-
-  // Cap total discount to subtotal
-  final totalDiscount =
-      desiredTotalDiscount > subtotal ? subtotal : desiredTotalDiscount;
-
-  final totalPayable = subtotal - totalDiscount + deliveryCharge;
-
-  // Check if loyalty points are being used
-  bool usingLoyaltyPoints = ref.watch(isUsingLoyaltyProvider);
-  final int loyaltyDiscountPoints = usingLoyaltyPoints
-      ? (loyaltyPoints > subtotal ? subtotal.toInt() : loyaltyPoints)
-      : 0;
-
-  // Deduct loyalty points from user
-  var body = {
-    'phone': phone,
-    'points': -loyaltyDiscountPoints,
-  };
-
-  String orderMode = ref.watch(setOrderModeProvider);
-
-  // Get coupon code
-  final couponCode = ref.read(couponProvider).code;
-
-  var orderbody = {
-    'order': orders,
-    'price': subtotal,
-    'delivery': deliveryCharge,
-    'discount': couponDiscount,        // only coupon discount here
-    'loyalty': loyaltyDiscount,        // only loyalty discount here
-    'couponCode': couponCode.isNotEmpty ? couponCode : null,
-    'phone': phone,
-    'paymentStatus': 'pending',
-    'paymentMethod': 'cod',
-    'orderMode': orderMode.toLowerCase(),
-  };
-
-  var res = await http.post(
-    Uri.parse('${BaseUrl.url}/user/loyalty'),
-    body: jsonEncode(body),
-    headers: {'Content-Type': 'application/json'},
-  );
-
-  var jsonRes = jsonDecode(res.body);
-
-  if (jsonRes['status']) {
-    var res = await http.post(
-      Uri.parse('${BaseUrl.url}/order/new'),
-      body: jsonEncode(orderbody),
-      headers: {
-        'Content-Type': 'application/json',
-        'authorization': 'Bearer $token',
-      },
+    final subtotal = ref.read(
+      cartProvider.notifier.select((cart) => cart.getNormalTotalPrice()),
     );
 
-    var jsonRes = jsonDecode(res.body);
-
-    if (jsonRes['status']) {
-      ref.read(cartProvider.notifier).clearCart();
-      if (!mounted) return;
-      ref.read(couponProvider.notifier).reset();
-      ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
-      log('Loyalty points used successfully');
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => Success(
-              title: "Order Successful",
-              message: "Your order has been received.",
-              details: {"Order ID": jsonRes['data']['_id']},
-            ),
-          ),
-        );
-      });
+    if (loyaltyDiscount > subtotal) {
+      loyaltyDiscount = subtotal;
     }
-  } else {
-    ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
-    log('Failed to use loyalty points: ${jsonRes['message']}');
-  }
-}
 
+    bool usingLoyaltyPoints = ref.watch(isUsingLoyaltyProvider);
+    final discountPoints =
+        usingLoyaltyPoints ? loyaltyPoints.clamp(0, subtotal.toInt()) : 0;
+
+    final body = {'phone': phone, 'points': -discountPoints};
+
+    String orderMode = ref.watch(setOrderModeProvider);
+    final couponCode = ref.read(couponProvider).code;
+
+    // ✅ NEW: Calculate delivery & packaging
+    final charges = ref.read(chargesProvider);
+    final packagingRate = charges['packagingCharge'] ?? 0.0;
+    final deliveryRate = charges['deliveryCharge'] ?? 0.0;
+
+    final totalQuantity = ref.read(cartProvider.notifier).getTotalQuantity();
+
+    final totalPackagingCharge = packagingRate * totalQuantity;
+    final totalDeliveryCharge = deliveryRate + totalPackagingCharge;
+
+    final orderBody = {
+      'order': orders,
+      'price': subtotal,
+      'delivery': totalDeliveryCharge,
+      'discount': couponDiscount,
+      'loyalty': loyaltyDiscount,
+      'couponCode': couponCode.isNotEmpty ? couponCode : null,
+      'phone': phone,
+      'paymentStatus': 'pending',
+      'paymentMethod': 'cod',
+      'orderMode': orderMode.toLowerCase(),
+    };
+
+    final loyaltyRes = await apiPost('/user/loyalty', body);
+    if (loyaltyRes['status']) {
+      final orderRes = await apiPost(
+        '/order/new',
+        orderBody,
+        headers: {'authorization': 'Bearer $token'},
+      );
+
+      if (orderRes['status']) {
+        ref.read(cartProvider.notifier).clearCart();
+        if (!mounted) return;
+        ref.read(couponProvider.notifier).reset();
+        ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
+        log('Loyalty points used successfully');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          Navigator.pushReplacement(
+            context,
+            material.MaterialPageRoute(
+              builder:
+                  (_) => Success(
+                    title: "Order Successful",
+                    message: "Your order has been received.",
+                    details: {"Order ID": orderRes['data']['_id']},
+                  ),
+            ),
+          );
+        });
+      }
+    } else {
+      ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
+      log('Failed to use loyalty points: ${loyaltyRes['message']}');
+    }
+  }
 
   // handling razorpay payment error
   void _handlePaymentError(PaymentFailureResponse response) {
+    showToast(
+      context: context,
+      builder:
+          (context, overlay) =>
+              buildToast(context, overlay, 'Payment error, please try again!'),
+      location: ToastLocation.topCenter,
+    );
     log("Payment Error: ${response.code} | ${response.message}");
   }
 
@@ -418,36 +439,23 @@ void _handlePayOnDelivery() async {
     log("External Wallet Selected: ${response.walletName}");
   }
 
-  // fetching user data from the server
   Future<void> getUserData(WidgetRef ref, String phone, String token) async {
-    try {
-      final res = await http.get(
-        Uri.parse('${BaseUrl.url}/user/$phone'),
-        headers: {
-          'Content-Type': 'application/json',
-          'authorization': 'Bearer $token',
-        },
-      );
+    final jsonRes = await apiGet(
+      '/user/$phone',
+      headers: {'authorization': 'Bearer $token'},
+    );
 
-      final jsonRes = jsonDecode(res.body);
+    if (jsonRes['status'] == true) {
+      final addresses =
+          (jsonRes['data']['address'] as List<dynamic>)
+              .whereType<String>()
+              .where((e) => e.isNotEmpty)
+              .toList();
 
-      if (jsonRes['status'] == true) {
-        final addresses = jsonRes['data']['address'] as List<dynamic>;
-
-        final addressStrings =
-            addresses
-                .map((e) => e?.toString() ?? "")
-                .where((e) => e.isNotEmpty)
-                .toList();
-
-        ref.read(addressProvider.notifier).setAddresses(addressStrings);
-
-        ref.read(isAddressLoadedProvider.notifier).setAddressLoaded(true);
-      } else {
-        debugPrint("Failed to fetch user data: ${jsonRes['message']}");
-      }
-    } catch (e) {
-      debugPrint("Error fetching user data: $e");
+      ref.read(addressProvider.notifier).setAddresses(addresses);
+      ref.read(isAddressLoadedProvider.notifier).setAddressLoaded(true);
+    } else {
+      debugPrint("Failed to fetch user data: ${jsonRes['message']}");
     }
   }
 
@@ -480,8 +488,7 @@ void _handlePayOnDelivery() async {
       final response = await http.get(Uri.parse("${BaseUrl.url}/store/status"));
       final jsonRes = await jsonDecode(response.body);
       if (response.statusCode == 200) {
-        ref.read(statusProvider.notifier).state =
-            (jsonRes['store'] == true);
+        ref.read(statusProvider.notifier).state = jsonRes['store'];
       }
     } catch (e) {
       log(e.toString());
@@ -879,12 +886,11 @@ void _handlePayOnDelivery() async {
                         if (categoryItems[index].length == 0) {
                           return SizedBox();
                         }
-                        String categoryName =
-                            categories[index]['name'].toString().toLowerCase();
-                        if (!categoryName.contains('tiffin')) {
-                          return SizedBox();
-                        }
-
+                        // String categoryName =
+                        //     categories[index]['name'].toString().toLowerCase();
+                        // if (!categoryName.contains('tiffin')) {
+                        //   return SizedBox();
+                        // }
                         return Padding(
                           padding: EdgeInsets.only(bottom: 10),
                           child: material.Container(

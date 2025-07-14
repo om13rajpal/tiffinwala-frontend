@@ -4,12 +4,14 @@ import 'dart:developer';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
+import 'package:shadcn_flutter/shadcn_flutter.dart' as shadcn;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tiffinwala/constants/url.dart';
 import 'package:tiffinwala/main.dart';
 import 'package:tiffinwala/providers/loading.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/input.dart';
+import 'package:tiffinwala/utils/text%20and%20inputs/toast.dart';
 import 'package:wolt_modal_sheet/wolt_modal_sheet.dart';
 import 'package:http/http.dart' as http;
 
@@ -22,6 +24,7 @@ SliverWoltModalSheetPage userDetails(
   TextEditingController firstNameController = TextEditingController();
   TextEditingController lastNameController = TextEditingController();
   TextEditingController addressController = TextEditingController();
+  TextEditingController referralController = TextEditingController();
 
   Future<void> registerUser() async {
     ref.read(isLoadingProvider.notifier).setLoading(true);
@@ -31,6 +34,7 @@ SliverWoltModalSheetPage userDetails(
       'lastName': lastNameController.text.trim(),
       'phoneNumber': phoneNumber,
       'address': addressController.text.trim(),
+      'referral': referralController.text.trim(),
     };
 
     var response = await http.post(
@@ -53,7 +57,16 @@ SliverWoltModalSheetPage userDetails(
       Navigator.popUntil(context, (route) => route.isFirst);
     } else {
       ref.read(isLoadingProvider.notifier).setLoading(false);
-
+      shadcn.showToast(
+        context: context,
+        builder:
+            (context, overlay) => buildToast(
+              context,
+              overlay,
+              'Error registering, please try again',
+            ),
+        location: shadcn.ToastLocation.topCenter,
+      );
       log('user not registered');
     }
   }
@@ -81,7 +94,7 @@ SliverWoltModalSheetPage userDetails(
         ),
       ),
     ),
-    heroImageHeight: 310,
+    heroImageHeight: 400,
     heroImage: Padding(
       padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 30),
       child: Column(
@@ -105,6 +118,12 @@ SliverWoltModalSheetPage userDetails(
             label: 'Address',
             hint: 'Street xyz, Patiala',
             controller: addressController,
+          ),
+          Input(
+            prefix: false,
+            label: 'Referral (optional)',
+            hint: '',
+            controller: referralController,
           ),
           TiffinButton(
             label: 'SAVE',
