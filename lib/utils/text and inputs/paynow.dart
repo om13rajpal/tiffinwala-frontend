@@ -12,19 +12,16 @@ import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/buttons/checkbox.dart';
 import 'package:http/http.dart' as http;
 
+final coldDrinkProvider = StateProvider<bool>((ref) => false);
+final chocolateMousseProvider = StateProvider<bool>((ref) => false);
+
 class Paynow extends ConsumerStatefulWidget {
   final void Function(String method)? openCheckout;
   final VoidCallback cod;
   final int loyaltyPoints;
   final double totalPrice;
 
-  const Paynow(
-    this.openCheckout,
-    this.loyaltyPoints,
-    this.cod,
-    this.totalPrice, {
-    super.key,
-  });
+  const Paynow(this.openCheckout, this.loyaltyPoints, this.cod, this.totalPrice, {super.key});
 
   @override
   ConsumerState<Paynow> createState() => _PaynowState();
@@ -37,9 +34,7 @@ class _PaynowState extends ConsumerState<Paynow> {
 
   void handleCheckbox(bool isChecked) {
     if (isChecked) {
-      ref
-          .read(discountProvider.notifier)
-          .setLoyaltyDiscount(widget.loyaltyPoints.toDouble());
+      ref.read(discountProvider.notifier).setLoyaltyDiscount(widget.loyaltyPoints.toDouble());
     } else {
       ref.read(discountProvider.notifier).setLoyaltyDiscount(0.0);
     }
@@ -72,42 +67,76 @@ class _PaynowState extends ConsumerState<Paynow> {
           discount = discountValue;
         }
 
+        final cartItems = ref.read(cartProvider);
+        final cartNotifier = ref.read(cartProvider.notifier);
+        final code = coupon.text.trim().toUpperCase();
+
+        if (code == "BOGO" || code == "B2G1" || code == "B3G1") {
+          int requiredQty = 1;
+          if (code == "B2G1") requiredQty = 2;
+          if (code == "B3G1") requiredQty = 3;
+
+          int totalQty = cartItems.fold(0, (sum, item) => sum + item.quantity);
+          if (totalQty >= requiredQty + 1) {
+            CartItems? lowest;
+            for (final item in cartItems) {
+              if (lowest == null || item.totalPrice < lowest.totalPrice) {
+                lowest = item;
+              }
+            }
+            if (lowest != null) {
+              final updatedCart = cartItems.map((item) {
+                if (item == lowest) {
+                  return CartItems(
+                    item.item,
+                    0.0,
+                    item.options,
+                    item.quantity,
+                    item.optionSet,
+                    originalPrice: item.totalPrice,
+                  );
+                }
+                return item;
+              }).toList();
+              cartNotifier.state = updatedCart;
+            }
+          } else {
+            removeCoupon();
+            return;
+          }
+        }
+
+        if (code == "COLDDRINK" && widget.totalPrice >= 179) {
+          ref.read(coldDrinkProvider.notifier).state = true;
+        }
+
+        if (code == "SWEET" && widget.totalPrice >= 249) {
+          ref.read(chocolateMousseProvider.notifier).state = true;
+        }
+
         ref.read(discountProvider.notifier).setCouponDiscount(discount);
-        ref
-            .read(couponProvider.notifier)
-            .setCoupon(discount.toInt(), coupon.text.trim());
+        ref.read(couponProvider.notifier).setCoupon(discount.toInt(), coupon.text.trim());
+
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(
-              "Coupon applied successfully!",
-              style: TextStyle(color: Colors.white),
-            ),
+            content: Text("Coupon applied successfully!", style: TextStyle(color: Colors.white)),
             backgroundColor: Colors.green.shade700,
           ),
         );
         setState(() {});
       } else {
-        ref.read(discountProvider.notifier).setCouponDiscount(0.0);
-        ref.read(couponProvider.notifier).reset();
+        removeCoupon();
+        final errorMsg = jsonRes["message"] ?? "Failed to apply coupon.";
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              jsonRes["message"] ?? "Failed to apply coupon.",
-              style: TextStyle(color: Colors.white),
-            ),
-            backgroundColor: Colors.red.shade700,
-          ),
+          SnackBar(content: Text(errorMsg, style: TextStyle(color: Colors.white)), backgroundColor: Colors.red.shade700),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text(
-            "Error verifying coupon. Please try again.",
-            style: TextStyle(color: Colors.white),
-          ),
+          content: Text("Error verifying coupon. Please try again.", style: TextStyle(color: Colors.white)),
           backgroundColor: Colors.red.shade700,
         ),
       );
@@ -121,6 +150,24 @@ class _PaynowState extends ConsumerState<Paynow> {
   void removeCoupon() {
     ref.read(discountProvider.notifier).setCouponDiscount(0.0);
     ref.read(couponProvider.notifier).reset();
+    ref.read(coldDrinkProvider.notifier).state = false;
+    ref.read(chocolateMousseProvider.notifier).state = false;
+
+    final cartNotifier = ref.read(cartProvider.notifier);
+    final cartItems = ref.read(cartProvider);
+
+    final restoredCart = cartItems.map((item) {
+      return CartItems(
+        item.item,
+        item.originalPrice,
+        item.options,
+        item.quantity,
+        item.optionSet,
+        originalPrice: item.originalPrice,
+      );
+    }).toList();
+
+    cartNotifier.state = restoredCart;
     coupon.clear();
     setState(() {});
   }
@@ -129,7 +176,6 @@ class _PaynowState extends ConsumerState<Paynow> {
   Widget build(BuildContext context) {
     final discountState = ref.watch(discountProvider);
     final couponUsed = ref.watch(couponProvider).verified;
-
     List<CartItems> cartItems = ref.watch(cartProvider);
     final cartNotifier = ref.read(cartProvider.notifier);
     final totalPayable = cartNotifier.getPayableAmount(
@@ -139,6 +185,19 @@ class _PaynowState extends ConsumerState<Paynow> {
     );
 
     final loyaltyApplied = discountState.loyaltyDiscount > 0;
+    final couponCode = ref.read(couponProvider).code;
+
+    if ((couponCode == "BOGO" || couponCode == "B2G1" || couponCode == "B3G1")) {
+      int requiredQty = 1;
+      if (couponCode == "B2G1") requiredQty = 2;
+      if (couponCode == "B3G1") requiredQty = 3;
+
+      int totalQty = cartItems.fold(0, (sum, item) => sum + item.quantity);
+
+      if (totalQty < requiredQty + 1) {
+        Future.microtask(() => removeCoupon());
+      }
+    }
 
     return Column(
       spacing: 10,
@@ -150,26 +209,13 @@ class _PaynowState extends ConsumerState<Paynow> {
               child: SizedBox(
                 height: 35,
                 child: TextField(
-                  controller:
-                      couponUsed
-                          ? TextEditingController(text: coupon.text)
-                          : coupon,
+                  controller: couponUsed ? TextEditingController(text: coupon.text) : coupon,
                   readOnly: couponUsed,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.secondary,
-                  ),
-                  onChanged: (value) {},
-                  cursorOpacityAnimates: true,
+                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.secondary),
                   decoration: InputDecoration(
                     contentPadding: EdgeInsets.only(top: 9),
                     hintText: 'Coupon',
-                    hintStyle: TextStyle(
-                      fontSize: 13,
-                      fontWeight: FontWeight.w400,
-                      color: AppColors.secondary.withAlpha(100),
-                    ),
+                    hintStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w400, color: AppColors.secondary.withAlpha(100)),
                     filled: true,
                     fillColor: AppColors.accent,
                     border: OutlineInputBorder(
@@ -177,28 +223,18 @@ class _PaynowState extends ConsumerState<Paynow> {
                       borderSide: BorderSide.none,
                     ),
                     prefixIcon: Icon(LucideIcons.badgePercent, size: 16),
-                    suffixIcon:
-                        verifying
-                            ? SizedBox(
-                              height: 14,
-                              width: 14,
-                              child: Padding(
-                                padding: const EdgeInsets.all(8.0),
-                                child: CircularProgressIndicator(
-                                  color: AppColors.accent,
-                                  strokeWidth: 2,
-                                ),
-                              ),
-                            )
-                            : couponUsed
-                            ? InkWell(
-                              onTap: removeCoupon,
-                              child: Icon(LucideIcons.x, size: 16),
-                            )
-                            : InkWell(
-                              onTap: verifyCoupon,
-                              child: Icon(LucideIcons.chevronRight, size: 16),
+                    suffixIcon: verifying
+                        ? SizedBox(
+                            height: 14,
+                            width: 14,
+                            child: Padding(
+                              padding: const EdgeInsets.all(8.0),
+                              child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2),
                             ),
+                          )
+                        : couponUsed
+                            ? InkWell(onTap: removeCoupon, child: Icon(LucideIcons.x, size: 16))
+                            : InkWell(onTap: verifyCoupon, child: Icon(LucideIcons.chevronRight, size: 16)),
                   ),
                 ),
               ),
@@ -212,14 +248,8 @@ class _PaynowState extends ConsumerState<Paynow> {
                   offset: Offset(-7, 0),
                   child: Row(
                     children: [
-                      TiffinCheckbox(
-                        preChecked: loyaltyApplied,
-                        onChanged: handleCheckbox,
-                      ),
-                      Text(
-                        '₹${widget.loyaltyPoints} off',
-                        style: TextStyle(fontSize: 12),
-                      ),
+                      TiffinCheckbox(preChecked: loyaltyApplied, onChanged: handleCheckbox),
+                      Text('₹${widget.loyaltyPoints} off', style: TextStyle(fontSize: 12)),
                     ],
                   ),
                 ),
@@ -236,22 +266,8 @@ class _PaynowState extends ConsumerState<Paynow> {
               crossAxisAlignment: CrossAxisAlignment.start,
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text(
-                  '${cartItems.length} items in cart',
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w400,
-                    color: AppColors.secondary,
-                  ),
-                ),
-                Text(
-                  '₹ ${totalPayable.toStringAsFixed(2)}',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w500,
-                    color: AppColors.secondary,
-                  ),
-                ),
+                Text('${cartItems.length} items in cart', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w400, color: AppColors.secondary)),
+                Text('₹ ${totalPayable.toStringAsFixed(2)}', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w500, color: AppColors.secondary)),
               ],
             ),
             TiffinButton(
@@ -262,11 +278,7 @@ class _PaynowState extends ConsumerState<Paynow> {
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    builder:
-                        (context) => PaymentPage(
-                          openCheckout: widget.openCheckout,
-                          cod: widget.cod,
-                        ),
+                    builder: (context) => PaymentPage(openCheckout: widget.openCheckout, cod: widget.cod),
                   ),
                 );
               },

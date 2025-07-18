@@ -52,25 +52,29 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
     final isCart = widget.isCartItem;
 
     final item = isCart ? widget.cartItem!.item : widget.item;
-    final price =
-        isCart ? widget.cartItem!.totalPrice : widget.price?.toDouble() ?? 0.0;
-    final title =
-        isCart ? widget.cartItem!.item['itemName'] : widget.title ?? '';
-    final options = isCart ? widget.cartItem!.options : _selectedOptions;
+    final price = isCart
+        ? widget.cartItem!.totalPrice
+        : widget.price?.toDouble() ?? 0.0;
+    final title = isCart
+        ? widget.cartItem!.item['itemName']
+        : widget.title ?? '';
+    final options = isCart
+        ? widget.cartItem!.options
+        : _selectedOptions;
 
     final cart = ref.watch(cartProvider);
 
     final existingCartItem =
         cart.any(
-              (cartItem) =>
-                  cartItem.item['itemName'] == widget.item?['itemName'] &&
-                  _compareOptions(cartItem.options, _selectedOptions),
-            )
+          (cartItem) =>
+              cartItem.item['itemName'] == widget.item?['itemName'] &&
+              _compareOptions(cartItem.options, _selectedOptions),
+        )
             ? cart.firstWhere(
-              (cartItem) =>
-                  cartItem.item['itemName'] == widget.item?['itemName'] &&
-                  _compareOptions(cartItem.options, _selectedOptions),
-            )
+                (cartItem) =>
+                    cartItem.item['itemName'] == widget.item?['itemName'] &&
+                    _compareOptions(cartItem.options, _selectedOptions),
+              )
             : null;
 
     final counter =
@@ -80,6 +84,35 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
 
     final itemExists = counter > 0;
 
+    /// ✅ CART VIEW
+if (isCart) {
+  return material.Container(
+    padding: const material.EdgeInsets.symmetric(
+      horizontal: 10,
+      vertical: 10,
+    ),
+    child: material.Row(
+      mainAxisAlignment: material.MainAxisAlignment.spaceBetween,
+      children: [
+        material.Column(
+          crossAxisAlignment: material.CrossAxisAlignment.start,
+          children: [
+            ItemType(item: item, index: widget.index),
+            const material.SizedBox(height: 4),
+            itemTitle(title),
+            const material.SizedBox(height: 5),
+            priceText(price),
+          ],
+        ),
+        itemExists
+            ? countButton(counter, item, options)
+            : addButton(context, item, price),
+      ],
+    ),
+  );
+}
+
+    /// ✅ FULL NORMAL ITEM VIEW
     return material.Container(
       padding: const material.EdgeInsets.only(
         left: 10,
@@ -109,12 +142,10 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
                       widget.description ?? "",
                       maxLines: 2,
                       overflow: material.TextOverflow.ellipsis,
-                      style: material.TextStyle(
+                      style: const material.TextStyle(
                         fontSize: 11.5,
                         fontWeight: material.FontWeight.w500,
-                        color: isCart
-                            ? const material.Color(0xFFEFEFEF)
-                            : const material.Color(0xFF4A4A4A),
+                        color: material.Color(0xFF4A4A4A),
                       ),
                     ),
                   ),
@@ -136,14 +167,13 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
                     right: 0,
                     child: material.Transform.translate(
                       offset: const material.Offset(0, 10),
-                      child:
-                          itemExists
-                              ? material.Center(
-                                child: countButton(counter, item, options),
-                              )
-                              : material.Center(
-                                child: addButton(context, item, price),
-                              ),
+                      child: itemExists
+                          ? material.Center(
+                              child: countButton(counter, item, options),
+                            )
+                          : material.Center(
+                              child: addButton(context, item, price),
+                            ),
                     ),
                   ),
                 ],
@@ -169,10 +199,7 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
   }
 
   material.SizedBox addButton(
-    material.BuildContext context,
-    dynamic item,
-    double price,
-  ) {
+      material.BuildContext context, dynamic item, double price) {
     return material.SizedBox(
       width: 80,
       height: 35,
@@ -203,10 +230,7 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
   }
 
   material.Container countButton(
-    int counter,
-    dynamic item,
-    List<dynamic> options,
-  ) {
+      int counter, dynamic item, List<dynamic> options) {
     return material.Container(
       width: 80,
       height: 35,
@@ -221,9 +245,7 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
           material.GestureDetector(
             onTap: () {
               if (widget.isCartItem) {
-                ref
-                    .read(cartProvider.notifier)
-                    .decrementCart(
+                ref.read(cartProvider.notifier).decrementCart(
                       widget.cartItem!.item,
                       widget.cartItem!.options,
                     );
@@ -266,80 +288,73 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
         style: material.TextStyle(
           fontSize: 13,
           fontWeight: material.FontWeight.w600,
-          color: widget.isCartItem ? AppColors.secondary : AppColors.primary,
+          color:
+              widget.isCartItem ? AppColors.secondary : AppColors.primary,
         ),
       ),
     );
   }
 
   void showIncrementDialog(
-    material.BuildContext context,
-    dynamic item,
-    List<dynamic> options,
-  ) {
+      material.BuildContext context, dynamic item, List<dynamic> options) {
     material.showDialog(
       context: context,
-      builder:
-          (context) => material.AlertDialog(
-            title: const material.Text(
-              'Choose Action',
-              style: material.TextStyle(
-                fontSize: 14,
-                fontWeight: material.FontWeight.bold,
-              ),
-            ),
-            content: const material.Text(
-              'Would you like to add the same item again with existing customization or choose new customizations?',
-              style: material.TextStyle(fontSize: 12),
-            ),
-            actions: [
-              material.TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  if (widget.isCartItem) {
-                    ref
-                        .read(cartProvider.notifier)
-                        .incrementCart(
-                          widget.cartItem!.item,
-                          widget.cartItem!.options,
-                        );
-                  } else {
-                    ref
-                        .read(cartProvider.notifier)
-                        .incrementCart(widget.item, _selectedOptions);
-                  }
-                },
-                child: const material.Text(
-                  'Existing Customization',
-                  style: material.TextStyle(
-                    color: material.Color.fromARGB(255, 218, 218, 218),
-                    fontWeight: material.FontWeight.w600,
-                  ),
-                ),
-              ),
-              material.TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  openAddOns(context, item, widget.price?.toDouble() ?? 0.0);
-                },
-                child: const material.Text(
-                  'New Customization',
-                  style: material.TextStyle(
-                    color: material.Color.fromARGB(255, 218, 218, 218),
-                    fontWeight: material.FontWeight.w600,
-                  ),
-                ),
-              ),
-            ],
+      builder: (context) => material.AlertDialog(
+        title: const material.Text(
+          'Choose Action',
+          style: material.TextStyle(
+            fontSize: 14,
+            fontWeight: material.FontWeight.bold,
           ),
+        ),
+        content: const material.Text(
+          'Would you like to add the same item again with existing customization or choose new customizations?',
+          style: material.TextStyle(fontSize: 12),
+        ),
+        actions: [
+          material.TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              if (widget.isCartItem) {
+                ref
+                    .read(cartProvider.notifier)
+                    .incrementCart(widget.cartItem!.item,
+                        widget.cartItem!.options);
+              } else {
+                ref
+                    .read(cartProvider.notifier)
+                    .incrementCart(widget.item, _selectedOptions);
+              }
+            },
+            child: const material.Text(
+              'Existing Customization',
+              style: material.TextStyle(
+                color: material.Color.fromARGB(255, 218, 218, 218),
+                fontWeight: material.FontWeight.w600,
+              ),
+            ),
+          ),
+          material.TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              openAddOns(
+                  context, item, widget.price?.toDouble() ?? 0.0);
+            },
+            child: const material.Text(
+              'New Customization',
+              style: material.TextStyle(
+                color: material.Color.fromARGB(255, 218, 218, 218),
+                fontWeight: material.FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
   void openAddOns(
-    material.BuildContext context,
-    dynamic item,
-    double basePrice,
-  ) {
+      material.BuildContext context, dynamic item, double basePrice) {
     WoltModalSheet.show(
       context: context,
       pageListBuilder: (context) {
@@ -368,7 +383,8 @@ class _ItemDetailsState extends ConsumerState<ItemDetails> {
     for (final opt in a) {
       if (!b.any(
         (o) =>
-            o['optionName'] == opt['optionName'] && o['price'] == opt['price'],
+            o['optionName'] == opt['optionName'] &&
+            o['price'] == opt['price'],
       )) {
         return false;
       }
@@ -393,23 +409,21 @@ class ItemType extends material.StatelessWidget {
         const material.SizedBox(width: 5),
         index == 0
             ? material.Container(
-              padding: const material.EdgeInsets.symmetric(
-                horizontal: 6,
-                vertical: 1.5,
-              ),
-              decoration: material.BoxDecoration(
-                borderRadius: material.BorderRadius.circular(5),
-                color: const material.Color(0xFFF78080),
-              ),
-              child: const material.Text(
-                'Best Seller',
-                style: material.TextStyle(
-                  fontSize: 9.5,
-                  fontWeight: material.FontWeight.w700,
-                  color: material.Color(0xFFB30000),
+                padding: const material.EdgeInsets.symmetric(
+                    horizontal: 6, vertical: 1.5),
+                decoration: material.BoxDecoration(
+                  borderRadius: material.BorderRadius.circular(5),
+                  color: const material.Color(0xFFF78080),
                 ),
-              ),
-            )
+                child: const material.Text(
+                  'Best Seller',
+                  style: material.TextStyle(
+                    fontSize: 9.5,
+                    fontWeight: material.FontWeight.w700,
+                    color: material.Color(0xFFB30000),
+                  ),
+                ),
+              )
             : material.Container(),
       ],
     );
@@ -454,7 +468,7 @@ WoltModalSheetPage addOns(
         style: material.TextStyle(
           fontSize: 13,
           fontWeight: material.FontWeight.w600,
-          color: Colors.white,
+          color: material.Colors.white,
         ),
       ),
     ),
@@ -494,7 +508,8 @@ WoltModalSheetPage addOns(
         children: [
           material.Text(
             'Add ons',
-            style: material.TextStyle(fontSize: 17, fontWeight: material.FontWeight.w600),
+            style: const material.TextStyle(
+                fontSize: 17, fontWeight: material.FontWeight.w600),
           ),
           ...optionSet.asMap().entries.map((entry) {
             final idx = entry.key;

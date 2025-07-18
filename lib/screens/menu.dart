@@ -78,6 +78,10 @@ List<Map<String, dynamic>> buildOrders(List<CartItems> cartItems) {
           'skuCode': item.item['itemName'],
           'unitPrice': item.totalPrice,
           'quantity': item.quantity,
+          'options':
+              item.options.map((opt) {
+                return {'name': opt['optionName'], 'price': opt['price']};
+              }).toList(),
         },
       )
       .toList();
@@ -254,89 +258,91 @@ class _MenuState extends ConsumerState<Menu> {
   }
 
   // handling razorpay payment success
-  Future<void> _handlePaymentSuccess(PaymentSuccessResponse response) async {
-    final cartItems = ref.watch(cartProvider);
-    final discountState = ref.read(discountProvider);
-    final loyaltyDiscount = discountState.loyaltyDiscount;
-    final couponDiscount = discountState.couponDiscount;
+Future<void> _handlePaymentSuccess(PaymentSuccessResponse response) async {
+  final cartItems = ref.watch(cartProvider);
+  final discountState = ref.read(discountProvider);
+  final loyaltyDiscount = discountState.loyaltyDiscount;
+  final couponDiscount = discountState.couponDiscount;
 
-    final subtotal = ref.read(
-      cartProvider.notifier.select((cart) => cart.getNormalTotalPrice()),
-    );
+  // ✅ NEW: Calculate delivery & packaging
+  final charges = ref.read(chargesProvider);
+  final packagingRate = charges['packagingCharge'] ?? 0.0;
+  final deliveryRate = charges['deliveryCharge'] ?? 0.0;
 
-    // ✅ NEW: Calculate delivery & packaging
-    final charges = ref.read(chargesProvider);
-    final packagingRate = charges['packagingCharge'] ?? 0.0;
-    final deliveryRate = charges['deliveryCharge'] ?? 0.0;
+  final totalQuantity = ref.read(cartProvider.notifier).getTotalQuantity();
 
-    final totalQuantity = ref.read(cartProvider.notifier).getTotalQuantity();
+  final totalPackagingCharge = packagingRate * totalQuantity;
+  final totalDeliveryCharge = deliveryRate + totalPackagingCharge;
 
-    final totalPackagingCharge = packagingRate * totalQuantity;
-    final totalDeliveryCharge = deliveryRate + totalPackagingCharge;
-
-    double totalPrice = ref
-        .read(cartProvider.notifier)
-        .getPayableAmount(
-          ref,
-          couponPercent: couponDiscount,
-          loyaltyPoints: loyaltyDiscount,
-        );
-
-    final orders = buildOrders(cartItems);
-
-    bool usingLoyaltyPoints = ref.watch(isUsingLoyaltyProvider);
-    final discountPoints =
-        usingLoyaltyPoints ? loyaltyPoints.clamp(0, totalPrice.toInt()) : 0;
-
-    final body = {'phone': phone, 'points': -discountPoints};
-
-    String orderMode = ref.watch(setOrderModeProvider);
-
-    final orderBody = {
-      'order': orders,
-      'price': totalPrice,
-      'delivery': totalDeliveryCharge,
-      'discount': couponDiscount + loyaltyDiscount,
-      'phone': phone,
-      'paymentStatus': 'completed',
-      'paymentMethod': 'razorpay',
-      'orderMode': orderMode.toLowerCase(),
-    };
-
-    final loyaltyRes = await apiPost('/user/loyalty', body);
-    if (loyaltyRes['status']) {
-      final orderRes = await apiPost(
-        '/order/new',
-        orderBody,
-        headers: {'authorization': 'Bearer $token'},
+  double totalPrice = ref
+      .read(cartProvider.notifier)
+      .getPayableAmount(
+        ref,
+        couponPercent: couponDiscount,
+        loyaltyPoints: loyaltyDiscount,
       );
 
-      if (orderRes['status']) {
-        ref.read(cartProvider.notifier).clearCart();
-        if (!mounted) return;
-        ref.read(couponProvider.notifier).reset();
-        ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
-        log('Loyalty points used successfully');
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          if (!mounted) return;
-          Navigator.pushReplacement(
-            context,
-            material.MaterialPageRoute(
-              builder:
-                  (_) => Success(
-                    title: "Order Successful",
-                    message: "Your order has been received.",
-                    details: {"Order ID": orderRes['data']['_id']},
-                  ),
-            ),
-          );
-        });
-      }
-    } else {
+  final orders = buildOrders(cartItems);
+
+  bool usingLoyaltyPoints = ref.watch(isUsingLoyaltyProvider);
+  final discountPoints =
+      usingLoyaltyPoints ? loyaltyPoints.clamp(0, totalPrice.toInt()) : 0;
+
+  final body = {'phone': phone, 'points': -discountPoints};
+
+  String orderMode = ref.watch(setOrderModeProvider);
+  final couponCode = ref.read(couponProvider).code;
+
+  final orderBody = {
+    'order': orders,
+    'price': totalPrice,
+    'delivery': totalDeliveryCharge,
+    'discount': couponDiscount,
+    'loyalty': loyaltyDiscount,
+    'couponCode': couponCode.isNotEmpty ? couponCode : null,
+    'phone': phone,
+    'paymentStatus': 'completed',
+    'paymentMethod': 'razorpay',
+    'orderMode': orderMode.toLowerCase(),
+  };
+
+  debugPrint('=== ORDER PAYLOAD (Razorpay) ===');
+  debugPrint(jsonEncode(orderBody));
+
+  final loyaltyRes = await apiPost('/user/loyalty', body);
+  if (loyaltyRes['status']) {
+    final orderRes = await apiPost(
+      '/order/new',
+      orderBody,
+      headers: {'authorization': 'Bearer $token'},
+    );
+
+    if (orderRes['status']) {
+      ref.read(cartProvider.notifier).clearCart();
+      if (!mounted) return;
+      ref.read(couponProvider.notifier).reset();
       ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
-      log('Failed to use loyalty points: ${loyaltyRes['message']}');
+      log('Loyalty points used successfully');
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        Navigator.pushReplacement(
+          context,
+          material.MaterialPageRoute(
+            builder: (_) => Success(
+              title: "Order Successful",
+              message: "Your order has been received.",
+              details: {"Order ID": orderRes['data']['_id']},
+            ),
+          ),
+        );
+      });
     }
+  } else {
+    ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
+    log('Failed to use loyalty points: ${loyaltyRes['message']}');
   }
+}
+
 
   // handling pay on delivery
   Future<void> _handlePayOnDelivery() async {
@@ -386,6 +392,9 @@ class _MenuState extends ConsumerState<Menu> {
       'paymentMethod': 'cod',
       'orderMode': orderMode.toLowerCase(),
     };
+
+    debugPrint('=== ORDER PAYLOAD ===');
+    debugPrint(jsonEncode(orderBody));
 
     final loyaltyRes = await apiPost('/user/loyalty', body);
     if (loyaltyRes['status']) {
@@ -548,8 +557,14 @@ class _MenuState extends ConsumerState<Menu> {
 
     loyaltyPoints = ref.watch(setPointsProvider);
     isLoading = ref.watch(isMenuLoadedProvider);
-    double price = ref.watch(
-      cartProvider.notifier.select((cart) => cart.getNormalTotalPrice()),
+    final discountState = ref.watch(discountProvider);
+
+    final cartNotifier = ref.read(cartProvider.notifier);
+
+    final double price = cartNotifier.getPayableAmount(
+      ref,
+      couponPercent: discountState.couponDiscount,
+      loyaltyPoints: discountState.loyaltyDiscount,
     );
 
     bool open = ref.watch(statusProvider);
@@ -559,119 +574,126 @@ class _MenuState extends ConsumerState<Menu> {
         child: DrawerOverlay(
           child: Stack(
             children: [
-              ScrollConfiguration(
-                behavior: ScrollConfiguration.of(
-                  context,
-                ).copyWith(scrollbars: false),
-                child: CustomScrollView(
-                  controller: _outerController,
-                  physics: BouncingScrollPhysics(),
-                  slivers: [
-                    TiffinAppBar(centerTitle: false, title: 'Tiffinwala'),
-                    SliverToBoxAdapter(
-                      child: material.Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child:
-                            (isAddressLoading)
-                                ? Row(
-                                  children: [
-                                    lucide.LucideIconWidget(
-                                      icon: LucideIcons.map,
-                                      strokeWidth: 2,
-                                      color: AppColors.icon,
-                                      size: 14,
-                                    ),
-                                    SizedBox(width: 10),
-                                    Skeletonizer(
-                                      containersColor: AppColors.accent,
-                                      enableSwitchAnimation: true,
-                                      effect: PulseEffect(
-                                        from: const material.Color.fromARGB(
-                                          255,
-                                          126,
-                                          126,
-                                          126,
-                                        ),
-                                        to: const material.Color.fromARGB(
-                                          255,
-                                          82,
-                                          82,
-                                          82,
-                                        ).withAlpha(100),
-                                        duration: Duration(milliseconds: 800),
+              material.RefreshIndicator(
+                onRefresh: () async {
+                  await getMenu();
+                  await getUserData(ref, phone, token);
+                  await getLoyaltyPoints(ref);
+                },
+                child: ScrollConfiguration(
+                  behavior: ScrollConfiguration.of(
+                    context,
+                  ).copyWith(scrollbars: false),
+                  child: CustomScrollView(
+                    controller: _outerController,
+                    physics: BouncingScrollPhysics(),
+                    slivers: [
+                      TiffinAppBar(centerTitle: false, title: 'Tiffinwala'),
+                      SliverToBoxAdapter(
+                        child: material.Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child:
+                              (isAddressLoading)
+                                  ? Row(
+                                    children: [
+                                      lucide.LucideIconWidget(
+                                        icon: LucideIcons.map,
+                                        strokeWidth: 2,
+                                        color: AppColors.icon,
+                                        size: 14,
                                       ),
-                                      enabled: isLoading,
-                                      child: material.Text(
-                                        'house no. xyz sector xy - ab abcde 1234567',
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          overflow: TextOverflow.ellipsis,
-                                          color: AppColors.icon,
-                                          fontWeight: FontWeight.w400,
+                                      SizedBox(width: 10),
+                                      Skeletonizer(
+                                        containersColor: AppColors.accent,
+                                        enableSwitchAnimation: true,
+                                        effect: PulseEffect(
+                                          from: const material.Color.fromARGB(
+                                            255,
+                                            126,
+                                            126,
+                                            126,
+                                          ),
+                                          to: const material.Color.fromARGB(
+                                            255,
+                                            82,
+                                            82,
+                                            82,
+                                          ).withAlpha(100),
+                                          duration: Duration(milliseconds: 800),
+                                        ),
+                                        enabled: isLoading,
+                                        child: material.Text(
+                                          'house no. xyz sector xy - ab abcde 1234567',
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            overflow: TextOverflow.ellipsis,
+                                            color: AppColors.icon,
+                                            fontWeight: FontWeight.w400,
+                                          ),
                                         ),
                                       ),
-                                    ),
-                                  ],
-                                )
-                                : Address(address: primaryAddress.address),
+                                    ],
+                                  )
+                                  : Address(address: primaryAddress.address),
+                        ),
                       ),
-                    ),
-                    SliverToBoxAdapter(child: SizedBox(height: 10)),
-                    SliverToBoxAdapter(child: MenuControls()),
-                    SliverToBoxAdapter(child: SizedBox(height: 10)),
-                    SliverToBoxAdapter(child: PosterCarousel()),
-                    SliverToBoxAdapter(child: CouponCode()),
-                    SliverToBoxAdapter(child: SizedBox(height: 2)),
-                    SliverToBoxAdapter(child: CouponList()),
-                    SliverToBoxAdapter(child: SizedBox(height: 2)),
-                    SliverToBoxAdapter(child: tiffinMenu(context, open)),
-                    SliverToBoxAdapter(child: SizedBox(height: 20)),
-                    SliverToBoxAdapter(
-                      child: material.Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Image.asset(
-                            'assets/logo_dark.png',
-                            fit: BoxFit.contain,
-                            width: 100,
-                            height: 100,
-                          ),
-                        ],
+                      SliverToBoxAdapter(child: SizedBox(height: 10)),
+                      SliverToBoxAdapter(child: MenuControls()),
+                      SliverToBoxAdapter(child: SizedBox(height: 10)),
+                      SliverToBoxAdapter(child: PosterCarousel()),
+                      SliverToBoxAdapter(child: CouponCode()),
+                      SliverToBoxAdapter(child: SizedBox(height: 2)),
+                      SliverToBoxAdapter(child: CouponList()),
+                      SliverToBoxAdapter(child: SizedBox(height: 2)),
+                      SliverToBoxAdapter(child: tiffinMenu(context, open)),
+                      SliverToBoxAdapter(child: SizedBox(height: 20)),
+                      SliverToBoxAdapter(
+                        child: material.Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Image.asset(
+                              'assets/logo_dark.png',
+                              fit: BoxFit.contain,
+                              width: 100,
+                              height: 100,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    SliverToBoxAdapter(child: SizedBox(height: 5)),
-                    SliverToBoxAdapter(
-                      child: material.Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Image.asset(
-                            'assets/icons/fssai.png',
-                            fit: BoxFit.contain,
-                            width: 60,
-                          ),
-                        ],
+                      SliverToBoxAdapter(child: SizedBox(height: 5)),
+                      SliverToBoxAdapter(
+                        child: material.Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Image.asset(
+                              'assets/icons/fssai.png',
+                              fit: BoxFit.contain,
+                              width: 60,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    SliverToBoxAdapter(
-                      child: material.Padding(
-                        padding: const EdgeInsets.only(left: 10),
-                        child: Text(
-                          'LIC NO. 22123040000790',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: const material.Color.fromARGB(
-                              255,
-                              86,
-                              86,
-                              86,
+                      SliverToBoxAdapter(
+                        child: material.Padding(
+                          padding: const EdgeInsets.only(left: 10),
+                          child: Text(
+                            'LIC NO. 22123040000790',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: const material.Color.fromARGB(
+                                255,
+                                86,
+                                86,
+                                86,
+                              ),
                             ),
                           ),
                         ),
                       ),
-                    ),
-                    SliverToBoxAdapter(child: SizedBox(height: 20)),
-                  ],
+                      SliverToBoxAdapter(child: SizedBox(height: 20)),
+                    ],
+                  ),
                 ),
               ),
               viewCart(cartItems, price, context)
@@ -886,11 +908,6 @@ class _MenuState extends ConsumerState<Menu> {
                         if (categoryItems[index].length == 0) {
                           return SizedBox();
                         }
-                        // String categoryName =
-                        //     categories[index]['name'].toString().toLowerCase();
-                        // if (!categoryName.contains('tiffin')) {
-                        //   return SizedBox();
-                        // }
                         return Padding(
                           padding: EdgeInsets.only(bottom: 10),
                           child: material.Container(

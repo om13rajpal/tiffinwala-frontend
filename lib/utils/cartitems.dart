@@ -9,6 +9,10 @@ class CartItem extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     List<CartItems> cartItems = ref.watch(cartProvider);
+    if (cartItems.isEmpty) {
+      Navigator.of(context).maybePop();
+      return const SizedBox.shrink();
+    }
     return Column(
       children: List.generate(cartItems.length, (index) {
         return ItemDetails(

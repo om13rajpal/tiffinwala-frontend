@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mobkit_dashed_border/mobkit_dashed_border.dart';
 import 'package:tiffinwala/providers/cart.dart';
+import 'package:tiffinwala/utils/banner.dart';
 import 'package:tiffinwala/utils/cartitems.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/bill.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/gradientext.dart';
@@ -58,6 +59,7 @@ SliverWoltModalSheetPage cart(
           spacing: 15,
           children: [
             CartItem(),
+            FreeItemBanner(),
             Container(
               height: 0.8,
               width: double.infinity,

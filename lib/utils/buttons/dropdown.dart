@@ -9,7 +9,7 @@ class CustomDrowdpwn extends ConsumerStatefulWidget {
   ConsumerState<CustomDrowdpwn> createState() => _DrowdpwnState();
 }
 
-final List<String> dropDown = ['Delivery', 'Pickup'];
+final List<String> dropDown = ['Delivery'];
 
 class _DrowdpwnState extends ConsumerState<CustomDrowdpwn> {
   @override

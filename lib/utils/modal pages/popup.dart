@@ -23,11 +23,6 @@ WoltModalSheetPage menuPopUp(
       padding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
       child: Column(
         children: List.generate(categories.length, (index) {
-          String categoryName =
-              categories[index]['name'].toString().toLowerCase();
-          if (!categoryName.contains('tiffin')) {
-            return SizedBox();
-          }
           return GestureDetector(
             onTap: () {
               scrollToCategory(index);
@@ -35,7 +30,7 @@ WoltModalSheetPage menuPopUp(
             child: Column(
               children: [
                 Container(
-                  padding: EdgeInsets.symmetric(vertical:3, horizontal : 12),
+                  padding: EdgeInsets.symmetric(vertical: 3, horizontal: 12),
                   margin: EdgeInsets.only(bottom: 10),
                   width: MediaQuery.of(context).size.width * 0.7,
                   child: Row(
@@ -43,11 +38,17 @@ WoltModalSheetPage menuPopUp(
                     children: [
                       Text(
                         categories[index]['name'],
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                       Text(
                         categoryItems[index].length.toString(),
-                        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
                       ),
                     ],
                   ),
@@ -58,9 +59,7 @@ WoltModalSheetPage menuPopUp(
                   color: Color.fromARGB(255, 65, 65, 65),
                   thickness: 0.5,
                 ),
-                SizedBox(
-                  height: 8,
-                )
+                SizedBox(height: 8),
               ],
             ),
           );

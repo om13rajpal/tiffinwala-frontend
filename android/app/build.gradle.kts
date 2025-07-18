@@ -36,8 +36,8 @@ android {
         applicationId = "com.tiffinwala.tiffinwala"
         minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
-        versionCode = 3
-        versionName = "1.2"
+        versionCode = 4
+        versionName = "1.3"
     }
 
     signingConfigs {

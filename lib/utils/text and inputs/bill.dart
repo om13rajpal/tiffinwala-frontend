@@ -28,33 +28,24 @@ class _BillState extends ConsumerState<Bill> {
     );
 
     // cap loyalty discount so it does not exceed subtotal
-    final loyaltyDiscount = discountState.loyaltyDiscount > subtotal
-        ? subtotal
-        : discountState.loyaltyDiscount;
+    final loyaltyDiscount =
+        discountState.loyaltyDiscount > subtotal
+            ? subtotal
+            : discountState.loyaltyDiscount;
 
     double discountedSubtotal = subtotal - loyaltyDiscount - couponDiscount;
     if (discountedSubtotal < 0) discountedSubtotal = 0;
-
-    final cgst = discountedSubtotal * 0.025;
-    final sgst = discountedSubtotal * 0.025;
-
     // Read charges from provider
     final charges = ref.watch(chargesProvider);
     final packagingChargePerItem = charges['packagingCharge'] ?? 0.0;
     final deliveryCharge = charges['deliveryCharge'] ?? 0.0;
 
     // Calculate total quantity in cart
-    final totalQuantity = ref
-        .read(cartProvider.notifier)
-        .getTotalQuantity();
+    final totalQuantity = ref.read(cartProvider.notifier).getTotalQuantity();
 
     final packagingCharge = packagingChargePerItem * totalQuantity;
 
-    final amountPayable = discountedSubtotal +
-        cgst +
-        sgst +
-        packagingCharge +
-        deliveryCharge;
+    final amountPayable = discountedSubtotal + packagingCharge + deliveryCharge;
 
     return Container(
       width: MediaQuery.of(context).size.width,
@@ -96,8 +87,6 @@ class _BillState extends ConsumerState<Bill> {
                     'Promotional Discount',
                     '- ${couponDiscount.toStringAsFixed(2)}',
                   ),
-                _buildRow('CGST (2.5%)', cgst.toStringAsFixed(2)),
-                _buildRow('SGST (2.5%)', sgst.toStringAsFixed(2)),
                 if (packagingCharge > 0)
                   _buildRow(
                     'Packaging Charges',

@@ -4,6 +4,7 @@ import 'package:tiffinwala/providers/charge.dart';
 class CartItems {
   final dynamic item;
   final double totalPrice;
+  final double originalPrice;
   final List<dynamic> options;
   final int quantity;
   final List<dynamic> optionSet;
@@ -13,8 +14,9 @@ class CartItems {
     this.totalPrice,
     this.options,
     this.quantity,
-    this.optionSet,
-  );
+    this.optionSet, {
+    double? originalPrice,
+  }) : originalPrice = originalPrice ?? totalPrice;
 }
 
 class CartNotifier extends StateNotifier<List<CartItems>> {
@@ -163,9 +165,8 @@ class CartNotifier extends StateNotifier<List<CartItems>> {
     if (subtotal < 0) subtotal = 0;
 
     final packagingFee = totalItems * packagingChargeRate;
-    final tax = subtotal * 0.05;
 
-    final total = subtotal + tax + deliveryFee + packagingFee;
+    final total = subtotal + deliveryFee + packagingFee;
 
     return total;
   }
