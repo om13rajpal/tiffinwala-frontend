@@ -258,91 +258,92 @@ class _MenuState extends ConsumerState<Menu> {
   }
 
   // handling razorpay payment success
-Future<void> _handlePaymentSuccess(PaymentSuccessResponse response) async {
-  final cartItems = ref.watch(cartProvider);
-  final discountState = ref.read(discountProvider);
-  final loyaltyDiscount = discountState.loyaltyDiscount;
-  final couponDiscount = discountState.couponDiscount;
+  Future<void> _handlePaymentSuccess(PaymentSuccessResponse response) async {
+    final cartItems = ref.watch(cartProvider);
+    final discountState = ref.read(discountProvider);
+    final loyaltyDiscount = discountState.loyaltyDiscount;
+    final couponDiscount = discountState.couponDiscount;
 
-  // ✅ NEW: Calculate delivery & packaging
-  final charges = ref.read(chargesProvider);
-  final packagingRate = charges['packagingCharge'] ?? 0.0;
-  final deliveryRate = charges['deliveryCharge'] ?? 0.0;
+    // ✅ NEW: Calculate delivery & packaging
+    final charges = ref.read(chargesProvider);
+    final packagingRate = charges['packagingCharge'] ?? 0.0;
+    final deliveryRate = charges['deliveryCharge'] ?? 0.0;
 
-  final totalQuantity = ref.read(cartProvider.notifier).getTotalQuantity();
+    final totalQuantity = ref.read(cartProvider.notifier).getTotalQuantity();
 
-  final totalPackagingCharge = packagingRate * totalQuantity;
-  final totalDeliveryCharge = deliveryRate + totalPackagingCharge;
+    final totalPackagingCharge = packagingRate * totalQuantity;
+    final totalDeliveryCharge = deliveryRate;
 
-  double totalPrice = ref
-      .read(cartProvider.notifier)
-      .getPayableAmount(
-        ref,
-        couponPercent: couponDiscount,
-        loyaltyPoints: loyaltyDiscount,
+    double totalPrice = ref
+        .read(cartProvider.notifier)
+        .getPayableAmount(
+          ref,
+          couponPercent: couponDiscount,
+          loyaltyPoints: loyaltyDiscount,
+        );
+
+    final orders = buildOrders(cartItems);
+
+    bool usingLoyaltyPoints = ref.watch(isUsingLoyaltyProvider);
+    final discountPoints =
+        usingLoyaltyPoints ? loyaltyPoints.clamp(0, totalPrice.toInt()) : 0;
+
+    final body = {'phone': phone, 'points': -discountPoints};
+
+    String orderMode = ref.watch(setOrderModeProvider);
+    final couponCode = ref.read(couponProvider).code;
+
+    final orderBody = {
+      'order': orders,
+      'price': totalPrice,
+      'delivery': totalDeliveryCharge,
+      'handling': totalPackagingCharge,
+      'discount': couponDiscount,
+      'loyalty': loyaltyDiscount,
+      'couponCode': couponCode.isNotEmpty ? couponCode : null,
+      'phone': phone,
+      'paymentStatus': 'completed',
+      'paymentMethod': 'razorpay',
+      'orderMode': orderMode.toLowerCase(),
+    };
+
+    debugPrint('=== ORDER PAYLOAD (Razorpay) ===');
+    debugPrint(jsonEncode(orderBody));
+
+    final loyaltyRes = await apiPost('/user/loyalty', body);
+    if (loyaltyRes['status']) {
+      final orderRes = await apiPost(
+        '/order/new',
+        orderBody,
+        headers: {'authorization': 'Bearer $token'},
       );
 
-  final orders = buildOrders(cartItems);
-
-  bool usingLoyaltyPoints = ref.watch(isUsingLoyaltyProvider);
-  final discountPoints =
-      usingLoyaltyPoints ? loyaltyPoints.clamp(0, totalPrice.toInt()) : 0;
-
-  final body = {'phone': phone, 'points': -discountPoints};
-
-  String orderMode = ref.watch(setOrderModeProvider);
-  final couponCode = ref.read(couponProvider).code;
-
-  final orderBody = {
-    'order': orders,
-    'price': totalPrice,
-    'delivery': totalDeliveryCharge,
-    'discount': couponDiscount,
-    'loyalty': loyaltyDiscount,
-    'couponCode': couponCode.isNotEmpty ? couponCode : null,
-    'phone': phone,
-    'paymentStatus': 'completed',
-    'paymentMethod': 'razorpay',
-    'orderMode': orderMode.toLowerCase(),
-  };
-
-  debugPrint('=== ORDER PAYLOAD (Razorpay) ===');
-  debugPrint(jsonEncode(orderBody));
-
-  final loyaltyRes = await apiPost('/user/loyalty', body);
-  if (loyaltyRes['status']) {
-    final orderRes = await apiPost(
-      '/order/new',
-      orderBody,
-      headers: {'authorization': 'Bearer $token'},
-    );
-
-    if (orderRes['status']) {
-      ref.read(cartProvider.notifier).clearCart();
-      if (!mounted) return;
-      ref.read(couponProvider.notifier).reset();
-      ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
-      log('Loyalty points used successfully');
-      WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (orderRes['status']) {
+        ref.read(cartProvider.notifier).clearCart();
         if (!mounted) return;
-        Navigator.pushReplacement(
-          context,
-          material.MaterialPageRoute(
-            builder: (_) => Success(
-              title: "Order Successful",
-              message: "Your order has been received.",
-              details: {"Order ID": orderRes['data']['_id']},
+        ref.read(couponProvider.notifier).reset();
+        ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
+        log('Loyalty points used successfully');
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted) return;
+          Navigator.pushReplacement(
+            context,
+            material.MaterialPageRoute(
+              builder:
+                  (_) => Success(
+                    title: "Order Successful",
+                    message: "Your order has been received.",
+                    details: {"Order ID": orderRes['data']['_id']},
+                  ),
             ),
-          ),
-        );
-      });
+          );
+        });
+      }
+    } else {
+      ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
+      log('Failed to use loyalty points: ${loyaltyRes['message']}');
     }
-  } else {
-    ref.read(isUsingLoyaltyProvider.notifier).setLoading(false);
-    log('Failed to use loyalty points: ${loyaltyRes['message']}');
   }
-}
-
 
   // handling pay on delivery
   Future<void> _handlePayOnDelivery() async {
@@ -378,12 +379,13 @@ Future<void> _handlePaymentSuccess(PaymentSuccessResponse response) async {
     final totalQuantity = ref.read(cartProvider.notifier).getTotalQuantity();
 
     final totalPackagingCharge = packagingRate * totalQuantity;
-    final totalDeliveryCharge = deliveryRate + totalPackagingCharge;
+    final totalDeliveryCharge = deliveryRate;
 
     final orderBody = {
       'order': orders,
       'price': subtotal,
       'delivery': totalDeliveryCharge,
+      'handling': totalPackagingCharge,
       'discount': couponDiscount,
       'loyalty': loyaltyDiscount,
       'couponCode': couponCode.isNotEmpty ? couponCode : null,
@@ -641,8 +643,8 @@ Future<void> _handlePaymentSuccess(PaymentSuccessResponse response) async {
                       SliverToBoxAdapter(child: MenuControls()),
                       SliverToBoxAdapter(child: SizedBox(height: 10)),
                       SliverToBoxAdapter(child: PosterCarousel()),
-                      SliverToBoxAdapter(child: CouponCode()),
-                      SliverToBoxAdapter(child: SizedBox(height: 2)),
+                      // SliverToBoxAdapter(child: CouponCode()),
+                      // SliverToBoxAdapter(child: SizedBox(height: 2)),
                       SliverToBoxAdapter(child: CouponList()),
                       SliverToBoxAdapter(child: SizedBox(height: 2)),
                       SliverToBoxAdapter(child: tiffinMenu(context, open)),
@@ -908,8 +910,23 @@ Future<void> _handlePaymentSuccess(PaymentSuccessResponse response) async {
                         if (categoryItems[index].length == 0) {
                           return SizedBox();
                         }
+                        final excludedCategories = [
+                          'others',
+                          'indian main course',
+                          'chapatis',
+                          'beverage',
+                          'accompaniments',
+                        ];
+
+                        final categoryName =
+                            categories[index]['name'].toString().toLowerCase();
+
+                        if (excludedCategories.contains(categoryName)) {
+                          return const SizedBox.shrink(); // Don't render anything
+                        }
+
                         return Padding(
-                          padding: EdgeInsets.only(bottom: 10),
+                          padding: const EdgeInsets.only(bottom: 10),
                           child: material.Container(
                             key: categoryKeys[index],
                             child: Category(

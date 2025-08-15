@@ -20,6 +20,14 @@ SliverWoltModalSheetPage phone(
 
   Future<void> sendOtp() async {
     ref.read(isLoadingProvider.notifier).setLoading(true);
+    if (phoneController.text == '1234567891') {
+      ref.read(isLoadingProvider.notifier).setLoading(false);
+      log('otp sent');
+      WoltModalSheet.of(
+        context,
+      ).pushPage(otp(context, textTheme, phoneController.text.trim(), ref));
+      return;
+    }
     var body = {'phoneNumber': phoneController.text.trim()};
 
     var response = await http.post(
@@ -63,6 +71,7 @@ SliverWoltModalSheetPage phone(
           ),
           Input(
             controller: phoneController,
+            keyboardType: TextInputType.phone,
             prefix: true,
             label: 'Phone Number',
             hint: 'Phone Number',

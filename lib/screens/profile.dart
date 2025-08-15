@@ -22,6 +22,7 @@ import 'package:tiffinwala/utils/details.dart';
 import 'package:tiffinwala/utils/setting.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/address.dart';
 import 'package:tiffinwala/utils/text%20and%20inputs/badge.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:http/http.dart' as http;
 
 class Profile extends ConsumerStatefulWidget {
@@ -35,7 +36,7 @@ List<String> _settings = [
   'Personal Details',
   'Address',
   'Past orders',
-  'Copy Referral Code',
+  'Share Referral Code',
   'Log out',
 ];
 
@@ -115,20 +116,22 @@ class _ProfileState extends ConsumerState<Profile> {
     }
   }
 
-  Future<void> copyReferralCode() async {
+  Future<void> shareReferralCode() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     String? referralCode = prefs.getString('phone');
+
     if (referralCode != null && referralCode.isNotEmpty) {
-      await Clipboard.setData(ClipboardData(text: referralCode));
-      if (mounted) {
-        material.ScaffoldMessenger.of(context).showSnackBar(
-          const material.SnackBar(
-            content: Text('Referral code copied to clipboard!'),
-          ),
-        );
-      }
+      final String message = '''
+🚀 *Download the Tiffinwala App!* 🍱
+
+Use my referral code 👉 *$referralCode* 👈 when signing up and get *30 Loyalty Points* instantly! 🎉
+
+📲 Download here: https://play.google.com/store/apps/details?id=com.tiffinwala.app
+''';
+
+      await Share.share(message);
     } else {
-      if (mounted) {
+      if (context.mounted) {
         material.ScaffoldMessenger.of(context).showSnackBar(
           const material.SnackBar(content: Text('No referral code found.')),
         );
@@ -205,7 +208,7 @@ class _ProfileState extends ConsumerState<Profile> {
         context,
         MaterialPageRoute(builder: (context) => Orders()),
       ),
-      () => copyReferralCode(),
+      () => shareReferralCode(),
       () => logout(context),
     ];
 

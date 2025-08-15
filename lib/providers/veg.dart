@@ -11,3 +11,14 @@ class IsVegNotifier extends StateNotifier<bool> {
 final isVegProvider = StateNotifierProvider<IsVegNotifier, bool>((ref) {
   return IsVegNotifier();
 });
+class IsNonVegNotifier extends StateNotifier<bool> {
+  IsNonVegNotifier() : super(false);
+
+  void setNonVeg(bool value) {
+    state = value;
+  }
+}
+
+final isNonVegProvider = StateNotifierProvider<IsNonVegNotifier, bool>((ref) {
+  return IsNonVegNotifier();
+});   

@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -13,14 +14,6 @@ import 'package:tiffinwala/screens/menu.dart';
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  var token = prefs.getString('token');
-  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  runApp(ProviderScope(child: Tiffinwala(token: token)));
-}
-
 final authProvider = StateProvider<bool>((ref) => false);
 
 bool isTokenValid(String? token) {
@@ -31,9 +24,15 @@ bool isTokenValid(String? token) {
   return false;
 }
 
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  runApp(ProviderScope(child: const Tiffinwala()));
+}
+
 class Tiffinwala extends ConsumerStatefulWidget {
-  final String? token;
-  const Tiffinwala({super.key, required this.token});
+  final String? token = null; // original retained
+  const Tiffinwala({super.key});
 
   @override
   ConsumerState<Tiffinwala> createState() => _TiffinwalaState();
@@ -45,14 +44,8 @@ class _TiffinwalaState extends ConsumerState<Tiffinwala> {
   @override
   void initState() {
     super.initState();
-
     initializeLocalNotifications();
     registerNotification();
-
-    bool valid = isTokenValid(widget.token);
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(authProvider.notifier).state = valid;
-    });
   }
 
   void initializeLocalNotifications() async {
@@ -66,8 +59,7 @@ class _TiffinwalaState extends ConsumerState<Tiffinwala> {
 
     await flutterLocalNotificationsPlugin
         .resolvePlatformSpecificImplementation<
-          AndroidFlutterLocalNotificationsPlugin
-        >()
+            AndroidFlutterLocalNotificationsPlugin>()
         ?.createNotificationChannel(
           AndroidNotificationChannel(
             'high_importance_channel',
@@ -81,7 +73,6 @@ class _TiffinwalaState extends ConsumerState<Tiffinwala> {
     _messaging = FirebaseMessaging.instance;
 
     await _messaging.requestPermission(alert: true, badge: true, sound: true);
-
     await _messaging.subscribeToTopic("all_users");
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
@@ -101,13 +92,11 @@ class _TiffinwalaState extends ConsumerState<Tiffinwala> {
           ),
         );
       }
-    });    
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final isAuth = ref.watch(authProvider);
-
     return shadcn.ShadcnApp(
       title: 'Tiffinwala',
       debugShowCheckedModeBanner: false,
@@ -115,7 +104,82 @@ class _TiffinwalaState extends ConsumerState<Tiffinwala> {
         colorScheme: shadcn.ColorSchemes.darkNeutral(),
         radius: 0.5,
       ),
-      home: isAuth ? const Menu() : const Auth(),
+      home: const SplashScreen(),
+    );
+  }
+}
+class SplashScreen extends ConsumerStatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  ConsumerState<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends ConsumerState<SplashScreen>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _animation;
+  bool _checkedToken = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(seconds: 2),
+    );
+    _animation = Tween<double>(begin: 0.4, end: 1.2).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOutCirc),
+    );
+
+    _controller.forward();
+
+    Future.delayed(const Duration(seconds: 3), () async {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+      bool valid = isTokenValid(token);
+
+      if (mounted) {
+        ref.read(authProvider.notifier).state = valid;
+        setState(() {
+          _checkedToken = true;
+        });
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // This ensures ref.listen is only triggered once (after token is checked)
+    if (_checkedToken) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final isLoggedIn = ref.read(authProvider);
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(
+            builder: (_) => isLoggedIn ? const Menu() : const Auth(),
+          ),
+        );
+      });
+    }
+
+    return Scaffold(
+      backgroundColor: Colors.black,
+      body: Center(
+        child: ScaleTransition(
+          scale: _animation,
+          child: ClipOval(
+            child: Image.asset("assets/logo.png", width: 120, height: 120),
+          ),
+        ),
+      ),
     );
   }
 }

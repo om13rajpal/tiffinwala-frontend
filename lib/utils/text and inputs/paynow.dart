@@ -7,6 +7,7 @@ import 'package:tiffinwala/constants/url.dart';
 import 'package:tiffinwala/providers/cart.dart';
 import 'package:tiffinwala/providers/coupon.dart';
 import 'package:tiffinwala/providers/discount.dart';
+import 'package:tiffinwala/screens/coupons.dart';
 import 'package:tiffinwala/screens/payment.dart';
 import 'package:tiffinwala/utils/buttons/button.dart';
 import 'package:tiffinwala/utils/buttons/checkbox.dart';
@@ -32,6 +33,92 @@ TextEditingController coupon = TextEditingController();
 class _PaynowState extends ConsumerState<Paynow> {
   bool verifying = false;
 
+  // ---------- Helpers for BOGO family (FIXED, consistent snapshots) ----------
+
+  // Treat originalPrice as a snapshot of the *line total* (qty included).
+  double _baseLineTotalOf(CartItems it) {
+    final hasSnapshot = it.originalPrice is num;
+    return hasSnapshot ? (it.originalPrice as num).toDouble() : it.totalPrice;
+  }
+
+  double _unitFromLine(CartItems it) {
+    final qty = it.quantity > 0 ? it.quantity : 1;
+    final baseLine = _baseLineTotalOf(it);
+    return baseLine / qty;
+  }
+
+  /// Restore each line to its pre-discount line total (if we have a snapshot),
+  /// then clear the snapshot to prevent compounding on subsequent applies.
+  void _restoreCartTotals(WidgetRef ref) {
+    final cart = ref.read(cartProvider);
+    final restored = cart.map((it) {
+      final hasSnapshot = it.originalPrice is num;
+      final line = hasSnapshot ? (it.originalPrice as num).toDouble() : it.totalPrice;
+      return CartItems(
+        it.item,
+        line,                  // restore clean line total
+        it.options,
+        it.quantity,
+        it.optionSet,
+        originalPrice: null,   // clear snapshot to avoid drift
+      );
+    }).toList();
+
+    ref.read(cartProvider.notifier).state = restored;
+  }
+
+  /// Apply exactly one free unit on the *cheapest* line when eligible.
+  /// We snapshot *every* line’s pre-discount line total into originalPrice,
+  /// then reduce the chosen line’s total by one unit.
+  void _applySingleFreeUnitForBOGOFamily(WidgetRef ref, int requiredQty) {
+    final cart = ref.read(cartProvider);
+    final totalQty = cart.fold<int>(0, (s, i) => s + i.quantity);
+    if (totalQty < requiredQty + 1) return;
+
+    // Find cheapest unit
+    CartItems? cheapest;
+    double cheapestUnit = double.infinity;
+    for (final it in cart) {
+      final unit = _unitFromLine(it);
+      if (unit > 0 && unit < cheapestUnit) {
+        cheapestUnit = unit;
+        cheapest = it;
+      }
+    }
+    if (cheapest == null) return;
+
+    final updated = cart.map((it) {
+      final baseLine = _baseLineTotalOf(it);  // snapshot source
+
+      if (identical(it, cheapest)) {
+        final unit = _unitFromLine(it);
+        final newLine = (baseLine - unit).clamp(0.0, double.infinity);
+        return CartItems(
+          it.item,
+          newLine,             // discounted line total (one unit off)
+          it.options,
+          it.quantity,
+          it.optionSet,
+          originalPrice: baseLine, // snapshot pre-discount line total
+        );
+      }
+
+      // Non-cheapest lines: snapshot only (no change to total)
+      return CartItems(
+        it.item,
+        baseLine,
+        it.options,
+        it.quantity,
+        it.optionSet,
+        originalPrice: baseLine,
+      );
+    }).toList();
+
+    ref.read(cartProvider.notifier).state = updated;
+  }
+
+  // ---------- Loyalty checkbox ----------
+
   void handleCheckbox(bool isChecked) {
     if (isChecked) {
       ref.read(discountProvider.notifier).setLoyaltyDiscount(widget.loyaltyPoints.toDouble());
@@ -40,14 +127,16 @@ class _PaynowState extends ConsumerState<Paynow> {
     }
   }
 
-  void verifyCoupon() async {
-    if (coupon.text.trim().isEmpty) return;
+  // ---------- Coupon logic ----------
+
+  Future<void> _verifyCouponWithCode(String code) async {
+    if (code.trim().isEmpty) return;
 
     setState(() {
       verifying = true;
     });
 
-    final body = {"code": coupon.text.trim(), "price": widget.totalPrice};
+    final body = {"code": code.trim(), "price": widget.totalPrice};
 
     try {
       final response = await http.post(
@@ -67,60 +156,52 @@ class _PaynowState extends ConsumerState<Paynow> {
           discount = discountValue;
         }
 
-        final cartItems = ref.read(cartProvider);
-        final cartNotifier = ref.read(cartProvider.notifier);
-        final code = coupon.text.trim().toUpperCase();
+        final codeUpper = code.trim().toUpperCase();
 
-        if (code == "BOGO" || code == "B2G1" || code == "B3G1") {
+        // Always start clean so re-applying the same coupon doesn’t compound
+        _restoreCartTotals(ref);
+
+        if (codeUpper == "BOGO" || codeUpper == "B2G1" || codeUpper == "B3G1") {
           int requiredQty = 1;
-          if (code == "B2G1") requiredQty = 2;
-          if (code == "B3G1") requiredQty = 3;
+          if (codeUpper == "B2G1") requiredQty = 2;
+          if (codeUpper == "B3G1") requiredQty = 3;
 
-          int totalQty = cartItems.fold(0, (sum, item) => sum + item.quantity);
+          final cartItems = ref.read(cartProvider);
+          final totalQty = cartItems.fold(0, (sum, item) => sum + item.quantity);
           if (totalQty >= requiredQty + 1) {
-            CartItems? lowest;
-            for (final item in cartItems) {
-              if (lowest == null || item.totalPrice < lowest.totalPrice) {
-                lowest = item;
-              }
-            }
-            if (lowest != null) {
-              final updatedCart = cartItems.map((item) {
-                if (item == lowest) {
-                  return CartItems(
-                    item.item,
-                    0.0,
-                    item.options,
-                    item.quantity,
-                    item.optionSet,
-                    originalPrice: item.totalPrice,
-                  );
-                }
-                return item;
-              }).toList();
-              cartNotifier.state = updatedCart;
-            }
+            _applySingleFreeUnitForBOGOFamily(ref, requiredQty);
           } else {
             removeCoupon();
+            if (!mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: const Text("Not enough items for this offer.", style: TextStyle(color: Colors.white)),
+                backgroundColor: Colors.red.shade700,
+              ),
+            );
             return;
           }
         }
 
-        if (code == "COLDDRINK" && widget.totalPrice >= 179) {
+        // Conditional freebies (flags only; UI can read these)
+        if (codeUpper == "COLDDRINK" && widget.totalPrice >= 179) {
           ref.read(coldDrinkProvider.notifier).state = true;
         }
-
-        if (code == "SWEET" && widget.totalPrice >= 249) {
+        if (codeUpper == "SWEET" && widget.totalPrice >= 249) {
           ref.read(chocolateMousseProvider.notifier).state = true;
         }
 
+        // % discount stored (your getPayableAmount should use this)
         ref.read(discountProvider.notifier).setCouponDiscount(discount);
-        ref.read(couponProvider.notifier).setCoupon(discount.toInt(), coupon.text.trim());
+        ref.read(couponProvider.notifier).setCoupon(discount.toInt(), codeUpper);
+
+        // Update text field (locked once applied)
+        coupon.text = codeUpper;
 
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text("Coupon applied successfully!", style: TextStyle(color: Colors.white)),
+            content: const Text("Coupon applied successfully!", style: TextStyle(color: Colors.white)),
             backgroundColor: Colors.green.shade700,
           ),
         );
@@ -130,21 +211,28 @@ class _PaynowState extends ConsumerState<Paynow> {
         final errorMsg = jsonRes["message"] ?? "Failed to apply coupon.";
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(errorMsg, style: TextStyle(color: Colors.white)), backgroundColor: Colors.red.shade700),
+          SnackBar(content: Text(errorMsg, style: const TextStyle(color: Colors.white)), backgroundColor: Colors.red.shade700),
         );
       }
     } catch (e) {
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text("Error verifying coupon. Please try again.", style: TextStyle(color: Colors.white)),
+          content: const Text("Error verifying coupon. Please try again.", style: TextStyle(color: Colors.white)),
           backgroundColor: Colors.red.shade700,
         ),
       );
     } finally {
-      setState(() {
-        verifying = false;
-      });
+      if (mounted) {
+        setState(() {
+          verifying = false;
+        });
+      }
     }
+  }
+
+  Future<void> verifyCoupon() async {
+    await _verifyCouponWithCode(coupon.text);
   }
 
   void removeCoupon() {
@@ -153,31 +241,35 @@ class _PaynowState extends ConsumerState<Paynow> {
     ref.read(coldDrinkProvider.notifier).state = false;
     ref.read(chocolateMousseProvider.notifier).state = false;
 
-    final cartNotifier = ref.read(cartProvider.notifier);
-    final cartItems = ref.read(cartProvider);
+    // Fully restore (uses snapshot, then clears it)
+    _restoreCartTotals(ref);
 
-    final restoredCart = cartItems.map((item) {
-      return CartItems(
-        item.item,
-        item.originalPrice,
-        item.options,
-        item.quantity,
-        item.optionSet,
-        originalPrice: item.originalPrice,
-      );
-    }).toList();
-
-    cartNotifier.state = restoredCart;
     coupon.clear();
     setState(() {});
   }
+
+  // ---------- UI ----------
 
   @override
   Widget build(BuildContext context) {
     final discountState = ref.watch(discountProvider);
     final couponUsed = ref.watch(couponProvider).verified;
-    List<CartItems> cartItems = ref.watch(cartProvider);
+    final cartItems = ref.watch(cartProvider);
     final cartNotifier = ref.read(cartProvider.notifier);
+
+    // If user reduces quantity below eligibility after applying BOGO family, remove it
+    final couponCode = ref.read(couponProvider).code;
+    if ((couponCode == "BOGO" || couponCode == "B2G1" || couponCode == "B3G1")) {
+      int requiredQty = 1;
+      if (couponCode == "B2G1") requiredQty = 2;
+      if (couponCode == "B3G1") requiredQty = 3;
+
+      int totalQty = cartItems.fold(0, (sum, item) => sum + item.quantity);
+      if (totalQty < requiredQty + 1) {
+        Future.microtask(() => removeCoupon());
+      }
+    }
+
     final totalPayable = cartNotifier.getPayableAmount(
       ref,
       couponPercent: discountState.couponDiscount,
@@ -185,17 +277,14 @@ class _PaynowState extends ConsumerState<Paynow> {
     );
 
     final loyaltyApplied = discountState.loyaltyDiscount > 0;
-    final couponCode = ref.read(couponProvider).code;
 
-    if ((couponCode == "BOGO" || couponCode == "B2G1" || couponCode == "B3G1")) {
-      int requiredQty = 1;
-      if (couponCode == "B2G1") requiredQty = 2;
-      if (couponCode == "B3G1") requiredQty = 3;
-
-      int totalQty = cartItems.fold(0, (sum, item) => sum + item.quantity);
-
-      if (totalQty < requiredQty + 1) {
-        Future.microtask(() => removeCoupon());
+    Future<void> openCouponsPage() async {
+      final selected = await Navigator.push<String>(
+        context,
+        MaterialPageRoute(builder: (_) => const CouponsPage()),
+      );
+      if (selected != null && selected.isNotEmpty) {
+        await _verifyCouponWithCode(selected);
       }
     }
 
@@ -213,7 +302,7 @@ class _PaynowState extends ConsumerState<Paynow> {
                   readOnly: couponUsed,
                   style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: AppColors.secondary),
                   decoration: InputDecoration(
-                    contentPadding: EdgeInsets.only(top: 9),
+                    contentPadding: const EdgeInsets.only(top: 9),
                     hintText: 'Coupon',
                     hintStyle: TextStyle(fontSize: 13, fontWeight: FontWeight.w400, color: AppColors.secondary.withAlpha(100)),
                     filled: true,
@@ -222,19 +311,22 @@ class _PaynowState extends ConsumerState<Paynow> {
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
                     ),
-                    prefixIcon: Icon(LucideIcons.badgePercent, size: 16),
+                    prefixIcon: const Icon(LucideIcons.badgePercent, size: 16),
+                    // Right icon behavior:
+                    // - Arrow: open coupons page
+                    // - X: remove coupon
                     suffixIcon: verifying
-                        ? SizedBox(
+                        ? const SizedBox(
                             height: 14,
                             width: 14,
                             child: Padding(
-                              padding: const EdgeInsets.all(8.0),
-                              child: CircularProgressIndicator(color: AppColors.accent, strokeWidth: 2),
+                              padding: EdgeInsets.all(8.0),
+                              child: CircularProgressIndicator(strokeWidth: 2),
                             ),
                           )
                         : couponUsed
-                            ? InkWell(onTap: removeCoupon, child: Icon(LucideIcons.x, size: 16))
-                            : InkWell(onTap: verifyCoupon, child: Icon(LucideIcons.chevronRight, size: 16)),
+                            ? InkWell(onTap: removeCoupon, child: const Icon(LucideIcons.x, size: 16))
+                            : InkWell(onTap: openCouponsPage, child: const Icon(LucideIcons.chevronRight, size: 16)),
                   ),
                 ),
               ),
@@ -243,13 +335,13 @@ class _PaynowState extends ConsumerState<Paynow> {
               crossAxisAlignment: CrossAxisAlignment.start,
               spacing: 2,
               children: [
-                Text('Use loyalty points', style: TextStyle(fontSize: 10)),
+                const Text('Use loyalty points', style: TextStyle(fontSize: 10)),
                 Transform.translate(
-                  offset: Offset(-7, 0),
+                  offset: const Offset(-7, 0),
                   child: Row(
                     children: [
                       TiffinCheckbox(preChecked: loyaltyApplied, onChanged: handleCheckbox),
-                      Text('₹${widget.loyaltyPoints} off', style: TextStyle(fontSize: 12)),
+                      Text('₹${widget.loyaltyPoints} off', style: const TextStyle(fontSize: 12)),
                     ],
                   ),
                 ),

@@ -29,7 +29,12 @@ class _CouponListState extends State<CouponList> {
       final json = jsonDecode(response.body);
       if (json['status'] == true) {
         setState(() {
-          coupons = json['data'];
+          coupons =
+              (json['data'] as List)
+                  .where(
+                    (c) => c['enabled'] == true,
+                  ) // ✅ filter only enabled coupons
+                  .toList();
           isLoading = false;
         });
       } else {
@@ -185,33 +190,27 @@ class _CouponListState extends State<CouponList> {
               width: 160,
               padding: EdgeInsets.symmetric(horizontal: 10, vertical: 8),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E1E1E),
-                borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: Colors.grey.shade800, width: 1),
+                // ✅ Darker gradient background
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFFFF40C9),
+                    Color(0xFFFF0099),
+                    Color(0xFFF7BB97),
+                  ],
+                  stops: [0.0, 0.3, 1.0],
+                ),
+                borderRadius: BorderRadius.circular(15), // 🔁 keep same
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    coupon['code'],
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 13,
-                      fontWeight: FontWeight.w600,
-                    ),
+              child: Center(
+                child: Text(
+                  coupon['code'],
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold, // ✅ Make bold
                     overflow: TextOverflow.ellipsis,
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    "Min Order ₹${coupon['minOrder']}",
-                    style: TextStyle(
-                      color: Colors.grey.shade400,
-                      fontSize: 11.5,
-                      fontWeight: FontWeight.w400,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
           );

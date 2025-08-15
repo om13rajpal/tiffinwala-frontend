@@ -5,12 +5,15 @@ class Input extends StatelessWidget {
   final bool prefix;
   final String label;
   final String hint;
+  final TextInputType keyboardType;
   final TextEditingController controller;
   const Input({
     super.key,
     required this.prefix,
     required this.label,
-    required this.hint, required this.controller,
+    required this.hint,
+    this.keyboardType = TextInputType.text,
+    required this.controller,
   });
 
   @override
@@ -39,10 +42,13 @@ class Input extends StatelessWidget {
             cursorOpacityAnimates: true,
             enableIMEPersonalizedLearning: true,
             enableInteractiveSelection: true,
-            keyboardType: TextInputType.text,
+            keyboardType: keyboardType,
             stylusHandwritingEnabled: true,
             decoration: InputDecoration(
-              contentPadding: (prefix) ? const EdgeInsets.only(top: 8): const EdgeInsets.only(top: 8, left: 8),
+              contentPadding:
+                  (prefix)
+                      ? const EdgeInsets.only(top: 8)
+                      : const EdgeInsets.only(top: 8, left: 8),
               enabledBorder: OutlineInputBorder(
                 borderSide: BorderSide(
                   color: const Color.fromARGB(255, 94, 94, 94),

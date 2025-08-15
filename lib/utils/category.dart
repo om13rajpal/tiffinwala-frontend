@@ -21,9 +21,10 @@ class Category extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final isVeg = ref.watch(isVegProvider);
+    final isNonVeg = ref.watch(isNonVegProvider);
     final loadedItemCount = ref.watch(loadedItemCountProvider(title));
 
-    final filteredItems = _filterItems(items, isVeg);
+    final filteredItems = _filterItems(items, isVeg, isNonVeg);
 
     return NotificationListener<ScrollNotification>(
       onNotification: (scrollInfo) {
@@ -122,7 +123,7 @@ class Category extends ConsumerWidget {
   }
 
   /// Helper to filter items based on veg selection
-  List<Map<String, dynamic>> _filterItems(List<dynamic> items, bool isVeg) {
+  List<Map<String, dynamic>> _filterItems(List<dynamic> items, bool isVeg, bool isNonVeg) {
     List<Map<String, dynamic>> filtered = [];
 
     for (final item in items) {
@@ -146,6 +147,10 @@ class Category extends ConsumerWidget {
       if (isVeg) {
         if (tagIds == null || tagIds.isEmpty) continue;
         if (tagIds[0] != Classification.veg) continue;
+      }
+      if (isNonVeg) {
+        if (tagIds == null || tagIds.isEmpty) continue;
+        if (tagIds[0] == Classification.veg) continue;
       }
 
       filtered.add(item);

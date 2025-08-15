@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:tiffinwala/constants/colors.dart';
-import 'package:tiffinwala/utils/buttons/dropdown.dart';
 import 'package:tiffinwala/utils/buttons/switch.dart';
 
 class MenuControls extends StatelessWidget {
@@ -13,8 +12,6 @@ class MenuControls extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          SizedBox(width: 110, child: CustomDrowdpwn()),
-          SizedBox(width: 25),
           Text(
             'Veg only',
             style: TextStyle(
@@ -25,6 +22,17 @@ class MenuControls extends StatelessWidget {
           ),
           SizedBox(width: 5),
           VegOnlySwitch(),
+          SizedBox(width: 25),
+          Text(
+            'Non Veg',
+            style: TextStyle(
+              fontSize: 10,
+              color: AppColors.icon,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          SizedBox(width: 5),
+          NonVegOnlySwitch(),
         ],
       ),
     );

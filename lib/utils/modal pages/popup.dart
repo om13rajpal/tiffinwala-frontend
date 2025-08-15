@@ -20,9 +20,26 @@ WoltModalSheetPage menuPopUp(
     isTopBarLayerAlwaysVisible: true,
     useSafeArea: true,
     child: Padding(
-      padding: EdgeInsets.symmetric(vertical: 10, horizontal: 10),
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 10),
       child: Column(
         children: List.generate(categories.length, (index) {
+          // 🔁 Lowercase category name
+          final categoryName = categories[index]['name'].toString().toLowerCase();
+
+          // 🚫 List of excluded categories
+          final excluded = [
+            'others',
+            'indian main course',
+            'chapatis',
+            'beverage',
+            'accompaniments',
+          ];
+
+          // 🚫 Skip rendering this category
+          if (excluded.contains(categoryName)) {
+            return const SizedBox.shrink();
+          }
+
           return GestureDetector(
             onTap: () {
               scrollToCategory(index);
@@ -30,22 +47,22 @@ WoltModalSheetPage menuPopUp(
             child: Column(
               children: [
                 Container(
-                  padding: EdgeInsets.symmetric(vertical: 3, horizontal: 12),
-                  margin: EdgeInsets.only(bottom: 10),
+                  padding: const EdgeInsets.symmetric(vertical: 3, horizontal: 12),
+                  margin: const EdgeInsets.only(bottom: 10),
                   width: MediaQuery.of(context).size.width * 0.7,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         categories[index]['name'],
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
                       Text(
                         categoryItems[index].length.toString(),
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
@@ -53,13 +70,13 @@ WoltModalSheetPage menuPopUp(
                     ],
                   ),
                 ),
-                Divider(
+                const Divider(
                   endIndent: 30,
                   indent: 30,
                   color: Color.fromARGB(255, 65, 65, 65),
                   thickness: 0.5,
                 ),
-                SizedBox(height: 8),
+                const SizedBox(height: 8),
               ],
             ),
           );

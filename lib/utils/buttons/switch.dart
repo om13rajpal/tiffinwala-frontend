@@ -20,3 +20,22 @@ class _VegOnlySwitchState extends ConsumerState<VegOnlySwitch> {
     );
   }
 }
+
+class NonVegOnlySwitch extends ConsumerStatefulWidget {
+  const NonVegOnlySwitch({super.key});
+
+  @override
+  ConsumerState<NonVegOnlySwitch> createState() => _NonVegOnlySwitchState();
+}
+
+class _NonVegOnlySwitchState extends ConsumerState<NonVegOnlySwitch> {
+  @override
+  Widget build(BuildContext context) {
+    final isNonVeg = ref.watch(isNonVegProvider);
+
+    return Switch(
+      value: isNonVeg,
+      onChanged: (v) => ref.read(isNonVegProvider.notifier).setNonVeg(v),
+    );
+  }
+}
