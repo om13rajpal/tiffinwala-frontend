@@ -147,7 +147,7 @@ class _MenuState extends ConsumerState<Menu> {
     categoryItems.clear();
     allCategoryItems.clear();
 
-    final jsonRes = await apiGet('/menu');
+    final jsonRes = await apiGet('/menu/latest');
 
     if (jsonRes['status'] != true) {
       log(jsonRes['message'] ?? 'Unknown error loading menu.');
@@ -167,9 +167,11 @@ class _MenuState extends ConsumerState<Menu> {
           return ids?.map((id) => optionSetMap[id]).toList() ?? [];
         }).toList();
 
+    // ✅ Only add items that are inStock
     menu = [
       for (var i = 0; i < items.length; i++)
-        {'item': items[i], 'optionSet': optionSetItemWise[i]},
+        if (items[i]['inStock'] == true)
+          {'item': items[i], 'optionSet': optionSetItemWise[i]},
     ];
 
     for (var cat in categories) {

@@ -126,7 +126,7 @@ class _ProfileState extends ConsumerState<Profile> {
 
 Use my referral code 👉 *$referralCode* 👈 when signing up and get *30 Loyalty Points* instantly! 🎉
 
-📲 Download here: https://play.google.com/store/apps/details?id=com.tiffinwala.app
+📲 Download here: https://play.google.com/store/apps/details?id=com.tiffinwala.tiffinwala
 ''';
 
       await Share.share(message);

@@ -90,6 +90,7 @@ class Category extends ConsumerWidget {
             final price = itemData['price'];
             final name = itemData['itemName'];
             final description = itemData['description'] ?? "";
+            final imageUrl = itemData['image'] ?? "";
 
             Widget itemWidget = ItemDetails(
               isCartItem: false,
@@ -99,6 +100,7 @@ class Category extends ConsumerWidget {
               optionSet: optionSet,
               item: itemData,
               index: index - 1,
+              imageUrl: imageUrl,
             );
 
             if (index - 1 == 0) {
